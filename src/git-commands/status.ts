@@ -137,16 +137,42 @@ const status = (modules: Module[]): Promise<ModuleWithStatus[]> => Promise.all(m
   })))
 
 export default status
-export const print_status = (statuses: ModuleWithStatus[]) => {
-  console.log(
-    statuses.map(mod => {
-      const color = has_changes(mod.status) ? yellowBright : cyanBright
+export const print_status = async (statuses: Promise<ModuleWithStatus[]>) => {
 
-      return [
-        color(`./${relative(process.cwd(), mod.path)} ${print_branch_status(mod)}`),
-        has_changes(mod.status) && print_file_status(mod.status)
-      ].filter(s => !isEmpty(s)).join('\n')
-    }).join('\n')
+  let loading_symbol = '-'
+  process.stdout.write(`Checking statuses ${loading_symbol}`)
+  const loading_interval = setInterval(() => {
+    switch (loading_symbol) {
+      case '-':
+        loading_symbol = '\\';
+        break;
+      case '\\':
+        loading_symbol = '|'
+        break
+      case '|':
+        loading_symbol = '/'
+        break
+      case '/':
+        loading_symbol = '-'
+        break
+    }
+    process.stdout.clearLine(0, () => process.stdout.write(`Checking statuses ${loading_symbol}`))
+  }, 200)
+  statuses.then(statuses => {
+    clearInterval(loading_interval)
+    process.stdout.clearLine(0, () => 
+      console.log(
+        statuses.map(mod => {
+          const color = has_changes(mod.status) ? yellowBright : cyanBright
+
+          return [
+            color(`./${relative(process.cwd(), mod.path)} ${print_branch_status(mod)}`),
+            has_changes(mod.status) && print_file_status(mod.status)
+          ].filter(s => !isEmpty(s)).join('\n')
+        }).join('\n')
+      )
+    )
+  }
   )
 
 }
