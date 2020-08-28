@@ -1,10 +1,10 @@
 import { relative } from 'path'
-import Context from "../utils/context"
-import { bash } from "../utils"
-import { GitStatus } from "../interfaces/status"
-import { Module } from '../interfaces/ngm-dot'
 import { green, red, yellowBright, cyanBright } from 'chalk'
-import { isEmpty } from 'lodash'
+import isEmpty from 'lodash/isEmpty'
+
+import { bash } from "../utils"
+import { GitStatus, ModuleWithStatus } from "../interfaces/status"
+import { Module } from '../interfaces/ngm-dot'
 
 const parse_change = (status: Record<string, any>, code: string, ...change: string[]) => {
 
@@ -73,7 +73,7 @@ const parse_status= (raw: string): GitStatus => {
 
 }
 
-const print_status = (status: GitStatus): string => {
+const print_file_status = (status: GitStatus): string => {
 
   const lines = []
 
@@ -83,13 +83,13 @@ const print_status = (status: GitStatus): string => {
   lines.push(...(status.staged.renamed ?.map(file => green(` R ${file}`)) || []))
   lines.push(...(status.staged.copied  ?.map(file => green(` C ${file}`)) || []))
   lines.push(...(status.staged.unmerged?.map(file => green(` U ${file}`)) || []))
-
+  lines.push('')
   lines.push(...(status.unstaged.modified?.map(file => red(` M ${file}`)) || []))
   lines.push(...(status.unstaged.deleted ?.map(file => red(` D ${file}`)) || []))
   lines.push(...(status.unstaged.renamed ?.map(file => red(` R ${file}`)) || []))
   lines.push(...(status.unstaged.copied  ?.map(file => red(` C ${file}`)) || []))
   lines.push(...(status.unstaged.unmerged?.map(file => red(` U ${file}`)) || []))
-
+  lines.push('')
   lines.push(...(status.untracked?.map(file => red(` ? ${file}`)) || []))
 
   return lines.join('\n').concat('\n')
@@ -131,20 +131,20 @@ const has_changes = (status: GitStatus) => [
     Boolean(status.unstaged.unmerged?.length),
   ].some(v => v)
 
-export default async () => {
-
-  const statuses = await Promise.all(Context.dot.modules.map(async (mod) => ({
+const status = (modules: Module[]): Promise<ModuleWithStatus[]> => Promise.all(modules.map(async (mod) => ({
     ...mod,
     status: parse_status((await bash('git', { cwd: mod.path }, 'status', '--porcelain', '-b'))[0])
   })))
 
+export default status
+export const print_status = (statuses: ModuleWithStatus[]) => {
   console.log(
     statuses.map(mod => {
       const color = has_changes(mod.status) ? yellowBright : cyanBright
 
       return [
         color(`./${relative(process.cwd(), mod.path)} ${print_branch_status(mod)}`),
-        has_changes(mod.status) && print_status(mod.status)
+        has_changes(mod.status) && print_file_status(mod.status)
       ].filter(s => !isEmpty(s)).join('\n')
     }).join('\n')
   )

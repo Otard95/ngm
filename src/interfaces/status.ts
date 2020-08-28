@@ -1,3 +1,5 @@
+import { Module } from "./ngm-dot";
+
 export interface GitStatus {
   staged: {
     modified?: string[]
@@ -20,4 +22,8 @@ export interface GitStatus {
     behind: number
     upstream: boolean
   }
+}
+
+export type ModuleWithStatus = Module & {
+  status: GitStatus
 }
