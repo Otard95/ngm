@@ -1,6 +1,6 @@
 import { NGMDot } from "./interfaces/ngm-dot"
 import read_dot from "./subroutines/read-dot"
-import { status } from "./commands"
+import { status } from "./git-commands"
 import { ModuleWithStatus } from "./interfaces/status"
 
 class NGMApi {

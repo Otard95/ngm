@@ -1,4 +1,4 @@
-import { print_status } from './commands/status'
+import { print_status } from './git-commands/status'
 import NGMApi from './api'
 
 const main = async () => {
