@@ -9,7 +9,7 @@ const simple_usage = `usage: ngm <COMMAND> [OPTIONS]
 
 export default async (): Promise<void> => {
 
-  NGMApi.Init(process.cwd())
+  await NGMApi.Init(process.cwd())
   const cmds = commands()
   const ngm_flags = init_flags()
 
@@ -17,7 +17,7 @@ export default async (): Promise<void> => {
   let command = ''
   const ngm_handlers: SequenceFunc[] = []
 
-  process.argv.forEach(arg => {
+  process.argv.slice(2).forEach(arg => {
     if (cmds.has(arg))
       command = arg
     else if (ngm_flags.has(arg))
@@ -43,7 +43,7 @@ export default async (): Promise<void> => {
   try {
     await runner.exec()
   } catch (e) {
-    console.error(`[ERROR]  ${e.message}\n\n${simple_usage}`)
+    console.error(`[EXEC ERROR]  ${e}\n\n${simple_usage}`)
   }
 
   return
