@@ -15,7 +15,8 @@ class NGMApi {
   }
 
   public static async Init(root: string) {
-    return new NGMApi(await read_dot(root))
+    this._instance = new NGMApi(await read_dot(root))
+    return this._instance
   }
 
   private constructor(ngm_dot: NGMDot) {
