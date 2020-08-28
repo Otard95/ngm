@@ -1,12 +1,11 @@
-import read_dot from './subroutines/read-dot'
-import Context from './utils/context'
-import * as commands from './commands'
+import { print_status } from './commands/status'
+import NGMApi from './api'
 
 const main = async () => {
 
-  Context.dot = await read_dot(process.cwd())
+  await NGMApi.Init(process.cwd())
 
-  commands.status()
+  print_status(await NGMApi.Instance.status())
 
 }
 
