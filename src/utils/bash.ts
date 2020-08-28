@@ -1,5 +1,5 @@
 import { exec } from 'child_process'
-import { isEmpty } from 'lodash'
+import isEmpty from 'lodash/isEmpty'
 
 interface BashOptions {
   cwd?: string

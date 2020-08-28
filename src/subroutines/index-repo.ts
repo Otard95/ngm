@@ -1,8 +1,9 @@
 import { resolve, relative } from 'path'
 import { createHash } from 'crypto'
+import isEmpty from 'lodash/isEmpty'
+
 import bash from '../utils/bash'
 import { Module } from '../interfaces/ngm-dot'
-import { isEmpty } from 'lodash'
 
 export default async (dir: string): Promise<Module> => {
   const path = resolve(dir)
