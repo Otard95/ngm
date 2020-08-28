@@ -3,7 +3,7 @@ type ProjectId = string
 export interface Module {
   id: ModuleId
   path: string // Full path
-  remote: string // git remote address
+  remote: Record<string, string> // git remote address
   branch: string // The current branch
   url: string // Bitbucket url
 }
