@@ -10,7 +10,12 @@ const map_file = '.ngm-map.json'
 
 const mkdir = (path: string, ...sub_dir: string[]): Promise<boolean> => {
   return (new Promise((res, rej) => node_mkdir(resolve(path, ...sub_dir), err => {
-    if (err) return rej(err)
+    if (err) {
+      if (err.code === 'EEXIST')
+        return res(true)
+        
+      return rej(err)
+    }
     res(true)
   })))
 }
@@ -60,7 +65,12 @@ export default async (dir: string): Promise<NGMDot> => {
       }
 
       readFile(resolve(dir, `./${ngm_dir}`, map_file), (err, data) => {
-        if (err) return rej(err)
+        if (err) {
+          if (err.code === 'ENOENT')
+            return create_dot_folder(resolve(dir)).then(res)
+
+          return rej(err)
+        }
         res(JSON.parse(`${data}`))
       })
     })
