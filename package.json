@@ -16,5 +16,13 @@
     "@types/node": "^14.0.14",
     "chalk": "^4.1.0",
     "lodash": "^4.17.15"
+  },
+  "devDependencies": {
+    "husky": "^4.2.5"
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "(git stash push || exit 0) ; tsc -p . --noEmit ; code=$? ; (git stash pop || exit 0) ; (exit $code)"
+    }
   }
 }
