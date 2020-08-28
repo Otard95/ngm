@@ -156,12 +156,15 @@ export const print_status = async (statuses: Promise<ModuleWithStatus[]>) => {
         loading_symbol = '-'
         break
     }
-    process.stdout.clearLine(0, () => process.stdout.write(`Checking statuses ${loading_symbol}`))
+    process.stdout.moveCursor(-19, 0, () => {
+      process.stdout.write(`Checking statuses ${loading_symbol}`)
+    })
   }, 200)
   statuses.then(statuses => {
     clearInterval(loading_interval)
-    process.stdout.clearLine(0, () => 
+    process.stdout.moveCursor(-1, 0, () => 
       console.log(
+        '[ DONE ]\n',
         statuses.map(mod => {
           const color = has_changes(mod.status) ? yellowBright : cyanBright
 
@@ -172,7 +175,6 @@ export const print_status = async (statuses: Promise<ModuleWithStatus[]>) => {
         }).join('\n')
       )
     )
-  }
-  )
+  })
 
 }
