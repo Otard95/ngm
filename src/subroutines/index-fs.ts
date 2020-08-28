@@ -16,8 +16,6 @@ const index_fs = (dir: string, ...sub_dir: string[]): Promise<string[]> => {
 
       folders = folders.filter(v => !v.startsWith('.'))
 
-      asd
-
       const sub_repos = (await Promise.all(
         folders.map((folder) => index_fs(path, folder))
       )).reduce((acc, folders) => ([...acc, ...folders]), [])
