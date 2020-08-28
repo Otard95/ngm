@@ -1,12 +1,8 @@
-import { print_status } from './git-commands/status'
-import NGMApi from './api'
+import cli from "./cli";
+import NGMApi from "./api";
 
-const main = async () => {
-
-  await NGMApi.Init(process.cwd())
-
-  print_status(await NGMApi.Instance.status())
-
+if (module === require.main) {
+  module.exports = cli()
+} else {
+  module.exports = NGMApi
 }
-
-main()
