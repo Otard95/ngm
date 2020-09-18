@@ -1,4 +1,4 @@
-import { Module, NGMDot } from "./interfaces/ngm-dot"
+import { NGMDot } from "./interfaces/ngm-dot"
 import read_dot from "./subroutines/read-dot"
 import { status } from "./git-commands"
 import { ModuleWithStatus } from "./interfaces/status"
@@ -31,7 +31,7 @@ class NGMApi {
     this.ngm_dot = ngm_dot
   }
 
-  public status(args: StatusArgs): Promise<ModuleWithStatus[]> {
+  public status(_args: StatusArgs): Promise<ModuleWithStatus[]> {
     return status(this.ngm_dot.modules)
   }
 
