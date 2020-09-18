@@ -3,6 +3,10 @@ import read_dot from "./subroutines/read-dot"
 import { status } from "./git-commands"
 import { ModuleWithStatus } from "./interfaces/status"
 
+interface StatusArgs {
+  project?: string
+}
+
 class NGMApi {
 
   private static _instance?: NGMApi
@@ -14,8 +18,12 @@ class NGMApi {
     return this._instance
   }
 
-  public static async Init(root: string) {
-    this._instance = new NGMApi(await read_dot(root))
+  public static async Init(root: string | NGMDot) {
+    this._instance = new NGMApi(
+      typeof root === 'string'
+        ? await read_dot(root)
+        : root
+    )
     return this._instance
   }
 
