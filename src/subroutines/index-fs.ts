@@ -1,6 +1,9 @@
 import { readdir, Dirent } from 'fs'
 import { resolve } from 'path'
 
+/**
+ * Find and return a list of directories that are git repositories in dir or any sub directory
+ */
 const index_fs = (dir: string, ...sub_dir: string[]): Promise<string[]> => {
 
   return (new Promise<string[]>((res, rej) => {

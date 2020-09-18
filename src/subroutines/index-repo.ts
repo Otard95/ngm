@@ -5,6 +5,9 @@ import isEmpty from 'lodash/isEmpty'
 import bash from '../utils/bash'
 import { Module } from '../interfaces/ngm-dot'
 
+/**
+ * Get git info from a path as a Module
+ */
 export default async (dir: string): Promise<Module> => {
   const path = resolve(dir)
 
