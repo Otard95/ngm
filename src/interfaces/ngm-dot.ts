@@ -1,5 +1,5 @@
-type ModuleId = string
-type ProjectId = string
+type ModuleId = string // hash
+type ProjectId = string // hash
 export interface Module {
   id: ModuleId
   path: string // Full path
@@ -9,6 +9,7 @@ export interface Module {
 }
 export interface Project {
   id: ProjectId
+  name: string
   branch: string // Working branch for tye task
   modules_ids: ModuleId[]
 }

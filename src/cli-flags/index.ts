@@ -1,12 +1,9 @@
-import help_command from "./help"
-import { SequenceFunc } from "../utils/exec-sequence"
+import { CLIOpts } from "../interfaces/cli"
+import addHelp from "./help"
 
-const init_flags = () => {
-  const flags = new Map<string, SequenceFunc>()
+const init_flags = <C>(): CLIOpts<C> => {
+  const opts: CLIOpts<C> = []
 
-  flags.set('-h', help_command)
-  flags.set('--help', help_command)
-
-  return flags
+  return addHelp(opts)
 }
 export default init_flags
