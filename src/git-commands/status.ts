@@ -5,6 +5,7 @@ import isEmpty from 'lodash/isEmpty'
 import { bash } from "../utils"
 import { GitStatus, ModuleWithStatus } from "../interfaces/status"
 import { Module } from '../interfaces/ngm-dot'
+import displayProcess from '../utils/display-process'
 
 const parse_change = (status: Record<string, any>, code: string, ...change: string[]) => {
 
@@ -106,9 +107,9 @@ const print_branch_status = (mod: Module & { status: GitStatus }): string => {
 
   const remote_status = mod.status.head.ahead || mod.status.head.behind
     ? ' | '.concat([
-      mod.status.head.ahead > 0 && `${mod.status.head.ahead} ahead`,
-      mod.status.head.behind > 0 && `${mod.status.head.behind} behind`
-    ].filter(s => s !== false).join(' and ').concat(` of origin/${mod.branch}`))
+      `${mod.status.head.behind} ${red('⇃')}`,
+      `${cyanBright('↾')} ${mod.status.head.ahead}`
+    ].join('').concat(` | origin/${mod.branch}`))
     : ''
 
   const color = mod.status.head.ahead + mod.status.head.behind > 0 ? yellowBright : cyanBright
@@ -139,42 +140,17 @@ const status = (modules: Module[]): Promise<ModuleWithStatus[]> => Promise.all(m
 export default status
 export const print_status = async (statuses: Promise<ModuleWithStatus[]>) => {
 
-  let loading_symbol = '-'
-  process.stdout.write(`Checking statuses ${loading_symbol}`)
-  const loading_interval = setInterval(() => {
-    switch (loading_symbol) {
-      case '-':
-        loading_symbol = '\\';
-        break;
-      case '\\':
-        loading_symbol = '|'
-        break
-      case '|':
-        loading_symbol = '/'
-        break
-      case '/':
-        loading_symbol = '-'
-        break
-    }
-    process.stdout.moveCursor(-19, 0, () => {
-      process.stdout.write(`Checking statuses ${loading_symbol}`)
-    })
-  }, 200)
-  statuses.then(statuses => {
-    clearInterval(loading_interval)
-    process.stdout.moveCursor(-1, 0, () => 
-      console.log(
-        '[ DONE ]\n',
-        statuses.map(mod => {
-          const color = has_changes(mod.status) ? yellowBright : cyanBright
+  const statusList = await displayProcess('Checking Statuses', statuses)
 
-          return [
-            color(`./${relative(process.cwd(), mod.path)} ${print_branch_status(mod)}`),
-            has_changes(mod.status) && print_file_status(mod.status)
-          ].filter(s => !isEmpty(s)).join('\n')
-        }).join('\n')
-      )
-    )
-  })
+  console.log(
+    statusList.map(mod => {
+      const color = has_changes(mod.status) ? yellowBright : cyanBright
+
+      return [
+        color(`./${relative(process.cwd(), mod.path)} ${print_branch_status(mod)}`),
+        has_changes(mod.status) && print_file_status(mod.status)
+      ].filter(s => !isEmpty(s)).join('\n')
+    }).join('\n')
+  )
 
 }
