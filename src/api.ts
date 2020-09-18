@@ -4,7 +4,6 @@ import { status } from "./git-commands"
 import { ModuleWithStatus } from "./interfaces/status"
 
 interface StatusArgs {
-  modules: Module[]
   project?: string
 }
 
@@ -33,7 +32,7 @@ class NGMApi {
   }
 
   public status(args: StatusArgs): Promise<ModuleWithStatus[]> {
-    return status(args.modules)
+    return status(this.ngm_dot.modules)
   }
 
 }
