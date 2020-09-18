@@ -1,6 +1,6 @@
 import NGMApi from "./api"
-import commands, { CommandFn } from './cli-commands'
-import ExecSequence, { SequenceFunc } from './utils/exec-sequence'
+import commands from './cli-commands'
+import ExecSequence from './utils/exec-sequence'
 import init_flags from "./cli-flags"
 import read_dot from "./subroutines/read-dot"
 import { NGMDot, Project } from "./interfaces/ngm-dot"
