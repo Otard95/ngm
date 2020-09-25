@@ -5,13 +5,15 @@ import init_flags from "./cli-flags"
 import read_dot from "./subroutines/read-dot"
 import { NGMDot, Project, ProjectId } from "./interfaces/ngm-dot"
 import { intersect } from "./utils/array"
+import { noop } from "lodash"
 
-const simple_usage = `usage: ngm <COMMAND> [OPTIONS]
+const simple_usage = `usage: ngm [COMMAND] [PROJECT] [...OPTIONS]
   use the -h option for more info
 `
 
 export interface CLIContext {
   command: string
+  command_buffer?: any
   flags?: string[]
   git_args?: string[]
   project_id?: ProjectId
@@ -49,7 +51,7 @@ export default async (): Promise<void> => {
       next()
 
     })
-    .push(async (context, args, _next, err, done): Promise<void> => {
+    .push(async (context, args, next, err, done): Promise<void> => {
 
       const command_args = intersect(Array.from(cmds.keys()), args)
       command_args.forEach(cmd => args.splice(args.indexOf(cmd), 1))
@@ -61,10 +63,18 @@ export default async (): Promise<void> => {
         context.command = command_args[0]
       }
       
+      const { cmd, cmd_arg_parser } = cmds.get(context.command) || {}
+      if (!cmd) return err('You must specify a command')
+      cmd_arg_parser && cmd_arg_parser(context, args, next, err, done)
+
       context.git_args = args
 
-      const cmd = cmds.get(context.command)
-      if (!cmd) return err('You must specify a command')
+      next()
+
+    })
+    .push(async (context, _args, _next, _err, done) => {
+
+      const { cmd } = cmds.get(context.command) || { cmd: noop }
       cmd(await NGMApi.Init(context.ngm_dot), context)
       done()
 
@@ -73,7 +83,7 @@ export default async (): Promise<void> => {
   try {
     await runner.exec(
       { ngm_dot, command: 'status' },
-      [...process.argv]
+      [...process.argv.slice(2)]
     )
   } catch (e) {
     console.error(`${e}\n\n${simple_usage}`)
