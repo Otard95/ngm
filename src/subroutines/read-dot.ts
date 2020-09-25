@@ -1,12 +1,11 @@
-import { mkdir as node_mkdir, access, writeFile as node_write_file, readFile } from 'fs'
+import { mkdir as node_mkdir, access, readFile } from 'fs'
 import { resolve } from 'path'
 import { yellow } from 'chalk'
 import { NGMDot, Module } from '../interfaces/ngm-dot'
 import index_fs from './index-fs'
 import index_repo from './index-repo'
-
-const ngm_dir = '.ngm'
-const map_file = '.ngm-map.json'
+import write_dot from './write-dot'
+import { map_file, ngm_dir } from '../utils/constants'
 
 const mkdir = (path: string, ...sub_dir: string[]): Promise<boolean> => {
   return (new Promise((res, rej) => node_mkdir(resolve(path, ...sub_dir), err => {
@@ -18,15 +17,6 @@ const mkdir = (path: string, ...sub_dir: string[]): Promise<boolean> => {
     }
     res(true)
   })))
-}
-
-const write = (file: string, text: string): Promise<boolean> => {
-  return (new Promise((res, rej) => {
-    node_write_file(resolve(file), text, err => {
-      if (err) return rej(err)
-      res(true)
-    })
-  }))
 }
 
 const create_dot_folder = async (dir: string): Promise<NGMDot> => {
@@ -48,7 +38,7 @@ const create_dot_folder = async (dir: string): Promise<NGMDot> => {
     project_map: {}
   }
 
-  await write(resolve(dir, `./${ngm_dir}`, map_file), JSON.stringify(ngm_dot, null, 2))
+  await write_dot(ngm_dot)
 
   return ngm_dot
 
