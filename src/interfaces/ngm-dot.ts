@@ -1,5 +1,5 @@
-type ModuleId = string // hash
-type ProjectId = string // hash
+export type ModuleId = string // hash
+export type ProjectId = string // hash
 export interface Module {
   id: ModuleId
   path: string // Full path
