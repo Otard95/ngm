@@ -3,7 +3,7 @@ import commands from './cli-commands'
 import ExecSequence from './utils/exec-sequence'
 import init_flags from "./cli-flags"
 import read_dot from "./subroutines/read-dot"
-import { NGMDot, Project } from "./interfaces/ngm-dot"
+import { NGMDot, Project, ProjectId } from "./interfaces/ngm-dot"
 import { intersect } from "./utils/array"
 
 const simple_usage = `usage: ngm <COMMAND> [OPTIONS]
@@ -14,7 +14,7 @@ export interface CLIContext {
   command: string
   flags?: string[]
   git_args?: string[]
-  project_name?: string
+  project_id?: ProjectId
   ngm_dot: NGMDot
 }
 
@@ -40,10 +40,10 @@ export default async (): Promise<void> => {
       selected_project.forEach(p => args.splice(args.indexOf(p), 1))
 
       if (selected_project.length > 1) {
-        return err('You may only specify ut to one project')
+        return err('You may only specify one project')
       }
       if (selected_project.length > 0) {
-        context.project_name = selected_project[0]
+        context.project_id = project_name_map[selected_project[0]].id
       }
 
       next()
@@ -64,7 +64,7 @@ export default async (): Promise<void> => {
       context.git_args = args
 
       const cmd = cmds.get(context.command)
-      if (!cmd) return err('Internal error: Could not get command function')
+      if (!cmd) return err('You must specify a command')
       cmd(await NGMApi.Init(context.ngm_dot), context)
       done()
 
@@ -76,7 +76,7 @@ export default async (): Promise<void> => {
       [...process.argv]
     )
   } catch (e) {
-    console.error(`[EXEC ERROR]  ${e}\n\n${simple_usage}`)
+    console.error(`${e}\n\n${simple_usage}`)
   }
 
   return
