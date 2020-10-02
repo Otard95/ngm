@@ -2,7 +2,7 @@ import { relative, resolve } from 'path'
 import { CommandFn } from ".";
 import { SequenceFunc } from "../utils/exec-sequence";
 import { CLIContext } from "../cli";
-import { Module } from "../interfaces/ngm-dot";
+import { Repository } from "../interfaces/ngm-dot";
 import displayProcess from '../utils/display-process';
 import chalk from 'chalk';
 import { pad_right_to } from '../utils/pad-str';
@@ -12,9 +12,9 @@ interface ProjectBuffer {
   args: string[]
 }
 
-const get_non_repo_paths = (modules: Module[], paths: string[]): string[] => {
-  const module_paths = modules.map(m => m.path)
-  return paths.filter(p => !module_paths.includes(resolve(process.cwd(), p)))
+const get_non_repo_paths = (repositories: Repository[], paths: string[]): string[] => {
+  const repository_paths = repositories.map(m => m.path)
+  return paths.filter(p => !repository_paths.includes(resolve(process.cwd(), p)))
 }
 
 export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err) => {
@@ -38,18 +38,18 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
     case 'remove':
       if (!context.project_id) return err(buff.args.length > 0 ? `Unknown project: ${chalk.yellow(buff.args[0])}` : 'Missing project name')
       if (buff.args.length === 0) return err(chalk`project ${buff.sub_cmd} requires {yellow <project-name>} and {yellow <...repo-path>}`)
-      const non_module_paths = get_non_repo_paths(context.ngm_dot.modules, buff.args)
-      if (non_module_paths.length > 0) return err(`Director${
-          non_module_paths.length > 1
+      const non_repository_paths = get_non_repo_paths(context.ngm_dot.repositories, buff.args)
+      if (non_repository_paths.length > 0) return err(`Director${
+          non_repository_paths.length > 1
             ? 'ies'
             : 'y'
-        } ${non_module_paths.map(p => chalk.yellow(relative(process.cwd(), p) || './')).join(', ')} ${
-          non_module_paths.length > 1
+        } ${non_repository_paths.map(p => chalk.yellow(relative(process.cwd(), p) || './')).join(', ')} ${
+          non_repository_paths.length > 1
             ? 'are not repositories'
             : 'is not a repository'
         }`)
       buff.args = buff.args
-        .map(a => (context.ngm_dot.modules.find(m => m.path === resolve(process.cwd(), a)) as Module).id)
+        .map(a => (context.ngm_dot.repositories.find(m => m.path === resolve(process.cwd(), a)) as Repository).id)
       break
     case 'detail':
       if (!context.project_id) return err(buff.args.length > 0 ? `Unknown project: ${chalk.yellow(buff.args[0])}` : 'Missing project name')
@@ -94,17 +94,17 @@ const project_command: CommandFn = async (api, context) => {
 
     case 'detail':
       const project = context.ngm_dot.project_map[context.project_id || '']
-      const modules = project.modules_ids.map(mid => context.ngm_dot.module_map[mid])
-      const path_len = modules.reduce((acc, m) => Math.max(acc, (relative(process.cwd(), m.path) || './').length), 0)
-      const url_len =  modules.reduce((acc, m) => Math.max(acc, m.url.length), 0)
+      const repositories = project.repository_ids.map(mid => context.ngm_dot.repository_map[mid])
+      const path_len = repositories.reduce((acc, m) => Math.max(acc, (relative(process.cwd(), m.path) || './').length), 0)
+      const url_len =  repositories.reduce((acc, m) => Math.max(acc, m.url.length), 0)
       
       console.log(
         [
           `ID: ${project.id}`,
           `Name: ${project.name}`,
           `Branch: ${project.branch}`,
-          `Modules: ${modules.length === 0 ? chalk.gray('none') : ''}`,
-          ...modules.map(m => chalk`  {gray ${m.id}}  ${pad_right_to(relative(process.cwd(), m.path) || './', path_len)}  ${pad_right_to(m.url, url_len)}`)
+          `Repositories: ${repositories.length === 0 ? chalk.gray('none') : ''}`,
+          ...repositories.map(m => chalk`  {gray ${m.id}}  ${pad_right_to(relative(process.cwd(), m.path) || './', path_len)}  ${pad_right_to(m.url, url_len)}`)
         ].join('\n')
       )
       break

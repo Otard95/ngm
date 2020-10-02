@@ -1,4 +1,4 @@
-import { Module } from "./ngm-dot";
+import { Repository } from "./ngm-dot";
 
 export interface GitStatus {
   staged: {
@@ -24,6 +24,6 @@ export interface GitStatus {
   }
 }
 
-export type ModuleWithStatus = Module & {
+export type RepositoryWithStatus = Repository & {
   status: GitStatus
 }

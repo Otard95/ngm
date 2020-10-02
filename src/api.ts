@@ -1,7 +1,7 @@
-import { ModuleId, NGMDot, Project, ProjectId } from "./interfaces/ngm-dot"
+import { RepositoryId, NGMDot, Project, ProjectId } from "./interfaces/ngm-dot"
 import read_dot from "./subroutines/read-dot"
 import { status } from "./git-commands"
-import { ModuleWithStatus } from "./interfaces/status"
+import { RepositoryWithStatus } from "./interfaces/status"
 import { createHash } from "crypto"
 import write_dot from "./subroutines/write-dot"
 
@@ -33,14 +33,14 @@ class NGMApi {
     this.ngm_dot = ngm_dot
   }
 
-  public status(args: StatusArgs): Promise<ModuleWithStatus[]> {
+  public status(args: StatusArgs): Promise<RepositoryWithStatus[]> {
     const ngm_dot = {...this.ngm_dot}
     if (args.project_id) {
       const project = ngm_dot.project_map[args.project_id]
       if (project)
-        ngm_dot.modules = ngm_dot.modules.filter(m => project.modules_ids.includes(m.id))
+        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
     }
-    return status(ngm_dot.modules)
+    return status(ngm_dot.repositories)
   }
 
   public async project_create(name: string, branch: string) {
@@ -50,7 +50,7 @@ class NGMApi {
     const partial_project: SomePartial<Project, 'id'> = {
       name,
       branch,
-      modules_ids: []
+      repository_ids: []
     }
     const project: Project = {
       id: createHash('md5').update(JSON.stringify(partial_project)).digest('hex'),
@@ -66,37 +66,37 @@ class NGMApi {
 
   }
 
-  public async project_add(proj_id: ProjectId, ...module_ids: ModuleId[]) {
+  public async project_add(proj_id: ProjectId, ...repository_ids: RepositoryId[]) {
 
     if (!this.ngm_dot.project_map[proj_id]) throw new Error('No project with that id')
-    if (module_ids.some(mid => !Boolean(this.ngm_dot.module_map[mid]))) throw new Error('One or more invalid module ids')
+    if (repository_ids.some(mid => !Boolean(this.ngm_dot.repository_map[mid]))) throw new Error('One or more invalid repository ids')
     
     const ngm_dot = {...this.ngm_dot}
     const project = ngm_dot.project_map[proj_id]
 
-    project.modules_ids = [...project.modules_ids, ...module_ids].filter((v,i,a) => a.indexOf(v) === i)
+    project.repository_ids = [...project.repository_ids, ...repository_ids].filter((v,i,a) => a.indexOf(v) === i)
 
     ngm_dot.project_map[proj_id] = project
     ngm_dot.projects.splice(ngm_dot.projects.findIndex(p => p.id === proj_id), 1, project)
 
-    if (!await write_dot(ngm_dot)) throw new Error('Failed to add modules. Could not write dot file')
+    if (!await write_dot(ngm_dot)) throw new Error('Failed to add repositories. Could not write dot file')
 
   }
 
-  public async project_remove(proj_id: string, ...module_ids: string[]) {
+  public async project_remove(proj_id: string, ...repository_ids: string[]) {
     
     if (!this.ngm_dot.project_map[proj_id]) throw new Error('No project with that id')
-    if (module_ids.some(mid => !Boolean(this.ngm_dot.module_map[mid]))) throw new Error('One or more invalid module ids')
+    if (repository_ids.some(mid => !Boolean(this.ngm_dot.repository_map[mid]))) throw new Error('One or more invalid repository ids')
     
     const ngm_dot = {...this.ngm_dot}
     const project = ngm_dot.project_map[proj_id]
 
-    project.modules_ids = project.modules_ids.filter(mid => !module_ids.includes(mid))
+    project.repository_ids = project.repository_ids.filter(mid => !repository_ids.includes(mid))
 
     ngm_dot.project_map[proj_id] = project
     ngm_dot.projects.splice(ngm_dot.projects.findIndex(p => p.id === proj_id), 1, project)
 
-    if (!await write_dot(ngm_dot)) throw new Error('Failed to remove modules. Could not write dot file')
+    if (!await write_dot(ngm_dot)) throw new Error('Failed to remove repositories. Could not write dot file')
 
   }
 

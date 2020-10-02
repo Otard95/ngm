@@ -3,8 +3,8 @@ import { green, red, yellowBright, cyanBright } from 'chalk'
 import isEmpty from 'lodash/isEmpty'
 
 import { bash } from "../utils"
-import { GitStatus, ModuleWithStatus } from "../interfaces/status"
-import { Module } from '../interfaces/ngm-dot'
+import { GitStatus, RepositoryWithStatus } from "../interfaces/status"
+import { Repository } from '../interfaces/ngm-dot'
 import displayProcess from '../utils/display-process'
 import { pad_right_to } from '../utils/pad-str'
 
@@ -98,7 +98,7 @@ const print_file_status = (status: GitStatus): string => {
 
 }
 
-const print_branch_status = (mod: Module & { status: GitStatus }): string => {
+const print_branch_status = (mod: Repository & { status: GitStatus }): string => {
 
   const branch = mod.status.head.upstream
     && mod.status.head.ahead === 0
@@ -133,13 +133,13 @@ const has_changes = (status: GitStatus) => [
     Boolean(status.unstaged.unmerged?.length),
   ].some(v => v)
 
-const status = (modules: Module[]): Promise<ModuleWithStatus[]> => Promise.all(modules.map(async (mod) => ({
+const status = (repositories: Repository[]): Promise<RepositoryWithStatus[]> => Promise.all(repositories.map(async (mod) => ({
     ...mod,
     status: parse_status((await bash('git', { cwd: mod.path }, 'status', '--porcelain', '-b'))[0])
   })))
 
 export default status
-export const print_status = async (statuses: Promise<ModuleWithStatus[]>) => {
+export const print_status = async (statuses: Promise<RepositoryWithStatus[]>) => {
 
   const statusList = (await displayProcess('Checking Statuses', statuses))
     .map(s => ({ ...s, pretty_name: (relative(process.cwd(), s.path) || './') }))

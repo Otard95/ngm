@@ -1,7 +1,7 @@
 import { mkdir as node_mkdir, access, readFile } from 'fs'
 import { resolve } from 'path'
 import { yellow } from 'chalk'
-import { NGMDot, Module } from '../interfaces/ngm-dot'
+import { NGMDot, Repository } from '../interfaces/ngm-dot'
 import index_fs from './index-fs'
 import index_repo from './index-repo'
 import write_dot from './write-dot'
@@ -26,11 +26,11 @@ const create_dot_folder = async (dir: string): Promise<NGMDot> => {
   await mkdir(dir, `./${ngm_dir}`)
   const folders = await index_fs(dir)
 
-  const modules: Module[] = await Promise.all(folders.map(folder => index_repo(folder)))
+  const repository: Repository[] = await Promise.all(folders.map(folder => index_repo(folder)))
 
   const ngm_dot: NGMDot = {
-    modules,
-    module_map: modules.reduce((acc, mod) => ({
+    repositories: repository,
+    repository_map: repository.reduce((acc, mod) => ({
       ...acc,
       [mod.id]: mod
     }), {}),
