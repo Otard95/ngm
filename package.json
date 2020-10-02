@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build:prod": "tsc -p ./tsconfig.prod.json && webpack",
     "build": "tsc -p .",
     "start": "npm run build && node ./dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -18,7 +19,9 @@
     "lodash": "^4.17.15"
   },
   "devDependencies": {
-    "husky": "^4.2.5"
+    "husky": "^4.2.5",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12"
   },
   "husky": {
     "hooks": {

@@ -106,3 +106,4 @@ dist
 # Custom
 .ngm
 dist/
+build/
