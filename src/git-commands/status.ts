@@ -6,6 +6,7 @@ import { bash } from "../utils"
 import { GitStatus, ModuleWithStatus } from "../interfaces/status"
 import { Module } from '../interfaces/ngm-dot'
 import displayProcess from '../utils/display-process'
+import { pad_right_to } from '../utils/pad-str'
 
 const parse_change = (status: Record<string, any>, code: string, ...change: string[]) => {
 
@@ -140,14 +141,17 @@ const status = (modules: Module[]): Promise<ModuleWithStatus[]> => Promise.all(m
 export default status
 export const print_status = async (statuses: Promise<ModuleWithStatus[]>) => {
 
-  const statusList = await displayProcess('Checking Statuses', statuses)
+  const statusList = (await displayProcess('Checking Statuses', statuses))
+    .map(s => ({ ...s, pretty_name: (relative(process.cwd(), s.path) || './') }))
+
+  const longest_name = statusList.reduce((acc, s) => Math.max(acc, s.pretty_name.length), 0)
 
   console.log(
     statusList.map(mod => {
       const color = has_changes(mod.status) ? yellowBright : cyanBright
 
       return [
-        color(`./${relative(process.cwd(), mod.path)} ${print_branch_status(mod)}`),
+        color(`${pad_right_to(mod.pretty_name, longest_name+1)} ${print_branch_status(mod)}`),
         has_changes(mod.status) && print_file_status(mod.status)
       ].filter(s => !isEmpty(s)).join('\n')
     }).join('\n')

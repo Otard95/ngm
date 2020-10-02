@@ -1,0 +1,1 @@
+export const pad_right_to = (str: string, len: number) => `${str}${Array.from({length: len - str.length}).map(() => ' ').join('')}`

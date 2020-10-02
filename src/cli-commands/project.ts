@@ -5,6 +5,7 @@ import { CLIContext } from "../cli";
 import { Module } from "../interfaces/ngm-dot";
 import displayProcess from '../utils/display-process';
 import chalk from 'chalk';
+import { pad_right_to } from '../utils/pad-str';
 
 interface ProjectBuffer {
   sub_cmd: 'create' | 'add' | 'remove' | 'list' | 'detail'
@@ -64,6 +65,7 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
 const project_command: CommandFn = async (api, context) => {
 
   const command_buffer: ProjectBuffer = context.command_buffer
+      const id_len = 32
   switch (command_buffer.sub_cmd) {
     case 'create':
       displayProcess<void>('Creating project', api.project_create(command_buffer.args[0], command_buffer.args[1]))
@@ -78,11 +80,14 @@ const project_command: CommandFn = async (api, context) => {
       break
 
     case 'list':
+      const name_len = context.ngm_dot.projects.reduce((acc, p) => Math.max(acc, p.name.length), 0)
+      const branch_len = context.ngm_dot.projects.reduce((acc, p) => Math.max(acc, p.branch.length), 0)
+
       console.log(
         [
-          'ID                              \tName\tBranch',
+          `${pad_right_to('ID', id_len)}  ${pad_right_to('Name', name_len)}  ${pad_right_to('Branch', branch_len)}`,
           ...context.ngm_dot.projects
-            .map(p => chalk`{gray ${p.id}}\t${p.name}\t${p.branch}`)
+            .map(p => chalk`{gray ${p.id}}  ${pad_right_to(p.name, name_len)}  ${pad_right_to(p.branch, branch_len)}`)
         ].join('\n')
       )
       break
@@ -90,13 +95,16 @@ const project_command: CommandFn = async (api, context) => {
     case 'detail':
       const project = context.ngm_dot.project_map[context.project_id || '']
       const modules = project.modules_ids.map(mid => context.ngm_dot.module_map[mid])
+      const path_len = modules.reduce((acc, m) => Math.max(acc, (relative(process.cwd(), m.path) || './').length), 0)
+      const url_len =  modules.reduce((acc, m) => Math.max(acc, m.url.length), 0)
+      
       console.log(
         [
           `ID: ${project.id}`,
           `Name: ${project.name}`,
           `Branch: ${project.branch}`,
           `Modules: ${modules.length === 0 ? chalk.gray('none') : ''}`,
-          ...modules.map(m => chalk`  {gray ${m.id}}\t${relative(process.cwd(), m.path) || './'}\t${m.url}`)
+          ...modules.map(m => chalk`  {gray ${m.id}}  ${pad_right_to(relative(process.cwd(), m.path) || './', path_len)}  ${pad_right_to(m.url, url_len)}`)
         ].join('\n')
       )
       break
