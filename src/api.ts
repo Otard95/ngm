@@ -38,7 +38,7 @@ class NGMApi {
     if (args.project_id) {
       const project = ngm_dot.project_map[args.project_id]
       if (project)
-        ngm_dot.modules.filter(m => project.modules_ids.includes(m.id))
+        ngm_dot.modules = ngm_dot.modules.filter(m => project.modules_ids.includes(m.id))
     }
     return status(ngm_dot.modules)
   }
