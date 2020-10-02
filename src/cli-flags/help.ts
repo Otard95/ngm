@@ -12,7 +12,9 @@ const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...OPTIONS]
     project       Neither a project or branch may start with a {rgb(247,192,12) -}
       ├╴ create   Create a new project: {rgb(247,192,12) ngm project create <project-name> <new-branch-name>}
       ├╴ add      Add repositories to a project: {rgb(247,192,12) ngm project add <project-name> <...repo-path>}
-      └╴ remove   Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
+      ├╴ remove   Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
+      ├╴ list     List all projects
+      └╴ detail   Print detailed info for project: {rgb(247,192,12) ngm project detail <project-name>}
     
   OPTIONS`
 
