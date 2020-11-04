@@ -29,6 +29,7 @@ const create_dot_folder = async (dir: string): Promise<NGMDot> => {
   const repository: Repository[] = await Promise.all(folders.map(folder => index_repo(folder)))
 
   const ngm_dot: NGMDot = {
+    version: '1.0',
     repositories: repository,
     repository_map: repository.reduce((acc, mod) => ({
       ...acc,

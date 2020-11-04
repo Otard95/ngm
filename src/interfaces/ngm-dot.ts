@@ -4,7 +4,7 @@ export interface Repository {
   id: RepositoryId
   path: string // Full path
   remote: Record<string, string> // git remote address
-  branch: string // The current branch
+  branches: string[] // The current branch
   url: string // Bitbucket url
 }
 export interface Project {
@@ -14,6 +14,7 @@ export interface Project {
   repository_ids: RepositoryId[]
 }
 export interface NGMDot {
+  version: '1.0'
   repositories: Repository[]
   repository_map: Record<RepositoryId, Repository>
   projects: Project[]

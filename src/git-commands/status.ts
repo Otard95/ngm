@@ -98,19 +98,19 @@ const print_file_status = (status: GitStatus): string => {
 
 }
 
-const print_branch_status = (mod: Repository & { status: GitStatus }): string => {
+const print_branch_status = (mod: RepositoryWithStatus): string => {
 
   const branch = mod.status.head.upstream
     && mod.status.head.ahead === 0
     && mod.status.head.behind === 0
-    ? `origin/${mod.branch}`
-    : mod.branch
+    ? `origin/${mod.current_branch}`
+    : mod.current_branch
 
   const remote_status = mod.status.head.ahead || mod.status.head.behind
     ? ' | '.concat([
       `${mod.status.head.behind} ${red('⇃')}`,
       `${cyanBright('↾')} ${mod.status.head.ahead}`
-    ].join('').concat(` | origin/${mod.branch}`))
+    ].join('').concat(` | origin/${mod.current_branch}`))
     : ''
 
   const color = mod.status.head.ahead + mod.status.head.behind > 0 ? yellowBright : cyanBright
@@ -135,7 +135,8 @@ const has_changes = (status: GitStatus) => [
 
 const status = (repositories: Repository[]): Promise<RepositoryWithStatus[]> => Promise.all(repositories.map(async (mod) => ({
     ...mod,
-    status: parse_status((await bash('git', { cwd: mod.path }, 'status', '--porcelain', '-b'))[0])
+    status: parse_status((await bash('git', { cwd: mod.path }, 'status', '--porcelain', '-b'))[0]),
+    current_branch: (await bash('git', { cwd: mod.path }, 'branch' ,'--show-current'))[0].trim()
   })))
 
 export default status

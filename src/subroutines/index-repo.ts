@@ -12,7 +12,7 @@ export default async (dir: string): Promise<Repository> => {
   const path = resolve(dir)
 
   const remote_raw = await bash('git', { cwd: path }, 'remote', '-v')
-  const branch_raw = await bash('git', { cwd: path }, 'rev-parse', '--abbrev-ref', 'HEAD')
+  const branch_raw = await bash('git', { cwd: path }, 'branch', '--format', '\'%(refname:lstrip=2)\'')
 
   if (remote_raw[1] === 1) throw new Error(`Failed to get remote for ${relative(process.cwd(), path)}`)
   if (branch_raw[1] === 1) throw new Error(`Failed to get branch for ${relative(process.cwd(), path)}`)
@@ -29,17 +29,17 @@ export default async (dir: string): Promise<Repository> => {
   }, {} as Repository['remote'])
   
   const url = !isEmpty(remote.origin)
-    ? remote.origin.replace(/\.git/, '/src/master').replace(/:/, '/').replace(/git@/, 'https://')
+    ? remote.origin.replace(/\.git/, '').replace(/:/, '/').replace(/git@/, 'https://')
     : Object.keys(remote).length > 0
-      ? remote[Object.keys(remote)[0]].replace(/\.git/, '/src/master').replace(/:/, '/').replace(/git@/, 'https://')
+      ? remote[Object.keys(remote)[0]].replace(/\.git/, '').replace(/:/, '/').replace(/git@/, 'https://')
       : ''
 
-  const branch = branch_raw[0].trim()
+  const branches = branch_raw[0].split(/\s/g).filter(l => !isEmpty(l))
 
   const partial_repository: Omit<Repository, 'id'> = {
     path,
     remote,
-    branch,
+    branches,
     url
   }
 

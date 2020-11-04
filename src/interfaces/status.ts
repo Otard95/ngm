@@ -26,4 +26,5 @@ export interface GitStatus {
 
 export type RepositoryWithStatus = Repository & {
   status: GitStatus
+  current_branch: string
 }
