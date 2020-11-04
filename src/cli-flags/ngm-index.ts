@@ -9,8 +9,6 @@ import { Repository } from '../interfaces/ngm-dot'
 import { intersect } from '../utils/array'
 import displayProcess from '../utils/display-process'
 
-// TODO: Refactor so we have a diff object
-
 const repository_to_text = (repo: Repository) => [
   `    ID: ${repo.id}`,
   `Url: ${repo.url}`,
