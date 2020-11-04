@@ -1,9 +1,13 @@
-import { RepositoryId, NGMDot, Project, ProjectId } from "./interfaces/ngm-dot"
+import { createHash } from "crypto"
+import difference from "lodash/difference"
+import { RepositoryId, NGMDot, Project, ProjectId, Repository } from "./interfaces/ngm-dot"
 import read_dot from "./subroutines/read-dot"
 import { status } from "./git-commands"
 import { RepositoryWithStatus } from "./interfaces/status"
-import { createHash } from "crypto"
 import write_dot from "./subroutines/write-dot"
+import index_fs from "./subroutines/index-fs"
+import index_repo from './subroutines/index-repo'
+import { intersect } from "./utils/array"
 
 interface StatusArgs {
   project_id?: ProjectId
@@ -14,6 +18,8 @@ class NGMApi {
   private static _instance?: NGMApi
 
   private ngm_dot: NGMDot
+
+  public get NGMDot() { return {...this.ngm_dot} }
 
   public static get Instance() {
     if (!this._instance) throw new Error('You must call and wait for NGMApi::Init() to resolve before you can call this')
@@ -63,6 +69,7 @@ class NGMApi {
     ngm_dot.projects.push(project)
 
     if (!await write_dot(ngm_dot)) throw new Error('Failed to create project. Could not write dot file')
+    this.ngm_dot = ngm_dot
 
   }
 
@@ -80,6 +87,7 @@ class NGMApi {
     ngm_dot.projects.splice(ngm_dot.projects.findIndex(p => p.id === proj_id), 1, project)
 
     if (!await write_dot(ngm_dot)) throw new Error('Failed to add repositories. Could not write dot file')
+    this.ngm_dot = ngm_dot
 
   }
 
@@ -97,6 +105,51 @@ class NGMApi {
     ngm_dot.projects.splice(ngm_dot.projects.findIndex(p => p.id === proj_id), 1, project)
 
     if (!await write_dot(ngm_dot)) throw new Error('Failed to remove repositories. Could not write dot file')
+    this.ngm_dot = ngm_dot
+
+  }
+
+  public async re_index() {
+
+    const folders = await index_fs(process.cwd())
+    const repositories: Repository[] = await Promise.all(folders.map(folder => index_repo(folder)))
+
+    const ngm_dot = {...this.ngm_dot}
+
+    const {
+      changed,
+      removed
+    } = ngm_dot.repositories.reduce<{ changed: [Repository, Repository][], removed: Repository[] }>((acc, repo) => {
+      const foundRepo = repositories.find(r => r.path === repo.path)
+      if (foundRepo === undefined) {
+        acc.removed.push(repo)
+      } else if (foundRepo.id !== repo.id) {
+        acc.changed.push([repo, foundRepo])
+      }
+      return acc
+    }, { changed: [], removed: [] })
+    const created = repositories.filter(r => ngm_dot.repositories.findIndex(fr => r.path === fr.path) === -1)
+
+    const removed_ids = removed.map(r => r.id)
+    ngm_dot.projects = ngm_dot.projects.map(p => {
+      const changes = intersect(changed, p.repository_ids, (a, b) => a[0].id === b)
+      
+      p.repository_ids = difference(p.repository_ids, removed_ids)
+      p.repository_ids = difference(p.repository_ids, changes.map(c => c[0].id))
+      p.repository_ids.push(...changes.map(c => c[1].id))
+      
+      return p
+    })
+
+    ngm_dot.repositories = repositories
+
+    ngm_dot.repository_map = repositories.reduce((map, r) => ({ ...map, [r.id]: r }), {})
+    ngm_dot.project_map = ngm_dot.projects.reduce((map, p) => ({ ...map, [p.id]: p }), {})
+
+    if (!await write_dot(ngm_dot)) throw new Error('Failed to index repositories. Could not write dot file')
+    this.ngm_dot = ngm_dot
+
+    return { changed, removed, created }
 
   }
 

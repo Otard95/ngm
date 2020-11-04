@@ -7,4 +7,4 @@ type Priority = number
 
 export type HelpInfo = [ShortFlag, LongFlag, Description] | [ShortFlag, Description]
 
-export type CLIOpts<C> = [Priority, SequenceFunc<C>, HelpInfo][]
+export type CLIOpts<C> = [Priority, SequenceFunc<C>, HelpInfo]
