@@ -68,7 +68,6 @@ class NGMApi {
     ngm_dot.project_map[project.id] = project
     ngm_dot.projects.push(project)
 
-    if (!await write_dot(ngm_dot)) throw new Error('Failed to create project. Could not write dot file')
     this.ngm_dot = ngm_dot
 
   }
@@ -86,7 +85,6 @@ class NGMApi {
     ngm_dot.project_map[proj_id] = project
     ngm_dot.projects.splice(ngm_dot.projects.findIndex(p => p.id === proj_id), 1, project)
 
-    if (!await write_dot(ngm_dot)) throw new Error('Failed to add repositories. Could not write dot file')
     this.ngm_dot = ngm_dot
 
   }
@@ -104,7 +102,6 @@ class NGMApi {
     ngm_dot.project_map[proj_id] = project
     ngm_dot.projects.splice(ngm_dot.projects.findIndex(p => p.id === proj_id), 1, project)
 
-    if (!await write_dot(ngm_dot)) throw new Error('Failed to remove repositories. Could not write dot file')
     this.ngm_dot = ngm_dot
 
   }
@@ -146,11 +143,14 @@ class NGMApi {
     ngm_dot.repository_map = repositories.reduce((map, r) => ({ ...map, [r.id]: r }), {})
     ngm_dot.project_map = ngm_dot.projects.reduce((map, p) => ({ ...map, [p.id]: p }), {})
 
-    if (!await write_dot(ngm_dot)) throw new Error('Failed to index repositories. Could not write dot file')
     this.ngm_dot = ngm_dot
 
     return { changed, removed, created }
 
+  }
+
+  public async save_dot() {
+    return await write_dot(this.ngm_dot)
   }
 
 }

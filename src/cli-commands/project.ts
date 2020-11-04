@@ -65,7 +65,8 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
 const project_command: CommandFn = async (api, context) => {
 
   const command_buffer: ProjectBuffer = context.command_buffer
-      const id_len = 32
+  const id_len = 32
+
   switch (command_buffer.sub_cmd) {
     case 'create':
       displayProcess<void>('Creating project', api.project_create(command_buffer.args[0], command_buffer.args[1]))
@@ -90,7 +91,7 @@ const project_command: CommandFn = async (api, context) => {
             .map(p => chalk`{gray ${p.id}}  ${pad_right_to(p.name, name_len)}  ${pad_right_to(p.branch, branch_len)}`)
         ].join('\n')
       )
-      break
+      return
 
     case 'detail':
       const project = context.ngm_dot.project_map[context.project_id || '']
@@ -107,11 +108,13 @@ const project_command: CommandFn = async (api, context) => {
           ...repositories.map(m => chalk`  {gray ${m.id}}  ${pad_right_to(relative(process.cwd(), m.path) || './', path_len)}  ${pad_right_to(m.url, url_len)}`)
         ].join('\n')
       )
-      break
+      return
 
     default:
       console.log(context)
   }
+
+  if (!(await api.save_dot())) throw new Error('Failed to save ngm dot')
 
 }
 export default project_command
