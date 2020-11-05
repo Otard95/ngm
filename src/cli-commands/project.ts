@@ -6,6 +6,8 @@ import { Repository } from "../interfaces/ngm-dot";
 import displayProcess from '../utils/display-process';
 import chalk from 'chalk';
 import { pad_right_to } from '../utils/pad-str';
+import { isString } from 'lodash';
+import { first_of_a_in_b } from '../utils/array';
 
 interface ProjectBuffer {
   sub_cmd: 'create' | 'add' | 'remove' | 'list' | 'detail'
@@ -72,12 +74,34 @@ const project_command: CommandFn = async (api, context) => {
       displayProcess<void>('Creating project', api.project_create(command_buffer.args[0], command_buffer.args[1]))
       break
 
-    case 'add':
-      displayProcess<void>('Adding repositories', api.project_add(context.project_id || '', ...command_buffer.args))
+    case 'add': {
+      const pid = context.project_id
+      if (!isString(pid)) throw new Error('Missing project')
+
+      await displayProcess<void>('Adding repositories', api.project_add(pid, ...command_buffer.args))
+      await displayProcess('Checking out repositories', Promise.all(command_buffer.args.map(rid => api.checkout(rid, context.ngm_dot.project_map[pid].branch))))
+
+      await api.save_dot()
+      }
       break
 
-    case 'remove':
-      displayProcess<void>('Removing repositories', api.project_remove(context.project_id || '', ...command_buffer.args))
+    case 'remove': {
+      const pid = context.project_id
+      if (!isString(pid)) throw new Error('Missing project')
+
+      await displayProcess<void>('Removing repositories', api.project_remove(context.project_id || '', ...command_buffer.args))
+      await displayProcess(
+        'Checking out repositories',
+        Promise.all(command_buffer.args.map(rid => {
+          const repo = context.ngm_dot.repository_map[rid]
+          const branch = first_of_a_in_b(['dev', 'development', 'master', 'main'], repo.branches)
+          if (!isString(branch)) return ['',1]
+          return api.checkout(rid, branch)
+        })
+      ))
+
+      await api.save_dot()
+      }
       break
 
     case 'list':
