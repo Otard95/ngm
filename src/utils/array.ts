@@ -11,3 +11,9 @@ const intersect_default_eqfn = (a: any,b: any)=>a===b
 export const intersect = <T, U = T>(arr1: T[], arr2: U[], eqfn: (a: T, b: U) => boolean = intersect_default_eqfn): T[] => {
   return arr1.filter(v => arr2.findIndex(partial(eqfn, v)) > -1)
 }
+
+export const first_of_a_in_b = <T>(a: T[], b: T[]) => {
+  const res = intersect(a, b)
+  if (res.length > 0) return res[0]
+  return null
+}
