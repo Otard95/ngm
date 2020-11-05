@@ -50,6 +50,7 @@ const opts: CLIOpts<CLIContext> = [99, async (context, args, next) => {
     }
 
     context.ngm_dot = api.NGMDot
+    await api.save_dot()
   }
 
   flags.forEach(f => args.splice(args.indexOf(f), 1))

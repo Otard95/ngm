@@ -7,8 +7,8 @@ import { RepositoryWithStatus } from "./interfaces/status"
 import write_dot from "./subroutines/write-dot"
 import index_fs from "./subroutines/index-fs"
 import index_repo from './subroutines/index-repo'
-import { intersect } from "./utils/array"
 import { bash } from "./utils"
+import { repo_equal } from "./utils/repo"
 
 interface StatusArgs {
   project_id?: ProjectId
@@ -140,7 +140,7 @@ class NGMApi {
       const foundRepo = repositories.find(r => r.path === repo.path)
       if (foundRepo === undefined) {
         acc.removed.push(repo)
-      } else if (foundRepo.id !== repo.id) {
+      } else if (!repo_equal(foundRepo, repo)) {
         acc.changed.push([repo, foundRepo])
       }
       return acc
@@ -149,19 +149,16 @@ class NGMApi {
 
     const removed_ids = removed.map(r => r.id)
     ngm_dot.projects = ngm_dot.projects.map(p => {
-      const changes = intersect(changed, p.repository_ids, (a, b) => a[0].id === b)
-      
       p.repository_ids = difference(p.repository_ids, removed_ids)
-      p.repository_ids = difference(p.repository_ids, changes.map(c => c[0].id))
-      p.repository_ids.push(...changes.map(c => c[1].id))
-      
       return p
     })
-
-    ngm_dot.repositories = repositories
-
-    ngm_dot.repository_map = repositories.reduce((map, r) => ({ ...map, [r.id]: r }), {})
     ngm_dot.project_map = ngm_dot.projects.reduce((map, p) => ({ ...map, [p.id]: p }), {})
+
+    changed.forEach(c => {
+      ngm_dot.repository_map[c[0].id] = c[1]
+      ngm_dot.repository_map[c[0].id].id = c[0].id
+    })
+    ngm_dot.repositories = Object.values(ngm_dot.repository_map)
 
     this.ngm_dot = ngm_dot
 
