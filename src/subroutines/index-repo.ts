@@ -1,9 +1,9 @@
 import { resolve, relative } from 'path'
-import { createHash } from 'crypto'
 import isEmpty from 'lodash/isEmpty'
 
 import bash from '../utils/bash'
 import { Repository } from '../interfaces/ngm-dot'
+import { repo_id } from '../utils/repo'
 
 /**
  * Get git info from a path as a Repository
@@ -44,7 +44,7 @@ export default async (dir: string): Promise<Repository> => {
   }
 
   return {
-    id: createHash('md5').update(JSON.stringify(partial_repository)).digest('hex'),
+    id: repo_id(partial_repository as Repository),
     ...partial_repository
   }
 
