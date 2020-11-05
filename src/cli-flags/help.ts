@@ -7,7 +7,7 @@ const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...OPTIONS]
   COMMANDS
 
     status        Display the status ow any relevant repositories.
-    project       Neither a project or branch may start with a {rgb(247,192,12) -}
+    project       
       ├╴ create   Create a new project: {rgb(247,192,12) ngm project create <project-name> <new-branch-name>}
       ├╴ add      Add repositories to a project: {rgb(247,192,12) ngm project add <project-name> <...repo-path>}
       ├╴ remove   Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
