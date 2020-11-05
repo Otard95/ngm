@@ -8,6 +8,7 @@ import write_dot from "./subroutines/write-dot"
 import index_fs from "./subroutines/index-fs"
 import index_repo from './subroutines/index-repo'
 import { intersect } from "./utils/array"
+import { bash } from "./utils"
 
 interface StatusArgs {
   project_id?: ProjectId
@@ -103,6 +104,25 @@ class NGMApi {
     ngm_dot.projects.splice(ngm_dot.projects.findIndex(p => p.id === proj_id), 1, project)
 
     this.ngm_dot = ngm_dot
+
+  }
+
+  public async checkout(repo_id: RepositoryId, branch: string): ReturnType<typeof bash> {
+    
+    const repo = this.ngm_dot.repository_map[repo_id]
+
+    if (repo.branches.includes(branch)) {
+      return await bash('git', { cwd: repo.path }, 'checkout', branch)
+    }
+
+    const res = await bash('git', { cwd: repo.path }, 'checkout', '-b', branch)
+    if (res[1] > 1) 
+      return res
+
+    repo.branches.push(branch)
+    this.ngm_dot.repositories.splice(this.ngm_dot.repositories.findIndex(r => r.id === repo.id), 1, repo)
+
+    return res
 
   }
 
