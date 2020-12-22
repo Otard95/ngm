@@ -6,13 +6,14 @@ const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...OPTIONS]
 
   COMMANDS
 
-    status        Display the status ow any relevant repositories.
+    status          Display the status ow any relevant repositories.
     project       
-      ├╴ create   Create a new project: {rgb(247,192,12) ngm project create <project-name> <new-branch-name>}
-      ├╴ add      Add repositories to a project: {rgb(247,192,12) ngm project add <project-name> <...repo-path>}
-      ├╴ remove   Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
-      ├╴ list     List all projects
-      └╴ detail   Print detailed info for project: {rgb(247,192,12) ngm project detail <project-name>}
+      ├╴ create     Create a new project: {rgb(247,192,12) ngm project create <project-name> <new-branch-name>}
+      ├╴ add        Add repositories to a project: {rgb(247,192,12) ngm project add <project-name> <...repo-path>}
+      ├╴ remove     Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
+      ├╴ list       List all projects
+      └╴ detail     Print detailed info for project: {rgb(247,192,12) ngm project detail <project-name>}
+    <git command>   Currently only 'status' and 'pull' are supported
     
   OPTIONS`
 
