@@ -24,9 +24,13 @@ export interface CLIContext {
 
 export default async (): Promise<void> => {
 
-  await promisify(rl.cursorTo)(process.stdout, 0, 0)
-  await promisify(rl.clearScreenDown)(process.stdout)
-  console.log()
+  await promisify(process.stdout.write.bind(process.stdout))(
+    Array
+      .from({ length: process.stdout.rows })
+      .fill('\n')
+      .join('')
+  )
+  await promisify(rl.cursorTo)(process.stdout, 0, 1)
 
   const ngm_dot = await read_dot(process.cwd())
 
