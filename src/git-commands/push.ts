@@ -9,11 +9,11 @@ import displayProcess, { ProcessInput } from '../utils/display-process'
 import { pad_right_to } from '../utils/pad-str'
 
 export interface PushInfo extends Repository { push_output: string }
-const push = (repositories: Repository[]): ProcessInput<PushInfo>[] => repositories
+const push = (repositories: Repository[], git_args: string[] = []): ProcessInput<PushInfo>[] => repositories
   .map<ProcessInput<PushInfo>>((mod): ProcessInput<PushInfo> => {
     return {
       label: relative(process.cwd(), mod.path) || './',
-      promise: bash('git', { cwd: mod.path }, 'push').then(([out]) => ({ ...mod, push_output: out }))
+      promise: bash('git', { cwd: mod.path }, 'push', ...git_args).then(([out]) => ({ ...mod, push_output: out }))
     }
   })
 export default push

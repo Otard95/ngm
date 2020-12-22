@@ -9,7 +9,7 @@ const pull_command: CommandFn = async (_api, context) => {
     if (project)
       ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
   }
-  print_pull(pull(ngm_dot.repositories))
+  print_pull(pull(ngm_dot.repositories, context.git_args))
 
 }
 export default pull_command

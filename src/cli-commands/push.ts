@@ -9,7 +9,7 @@ const push_command: CommandFn = async (_api, context) => {
     if (project)
       ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
   }
-  print_push(push(ngm_dot.repositories))
+  print_push(push(ngm_dot.repositories, context.git_args))
 
 }
 export default push_command
