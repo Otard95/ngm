@@ -36,6 +36,7 @@ const parse_change = (status: Record<string, any>, code: string, ...change: stri
 const parse_status_line = (status: GitStatus, line: string): GitStatus => {
   const line_status_raw = line.substring(0, 2)
   const parts = line.substring(3, line.length).split(' ')
+  status.has_changes = status.has_changes || line_status_raw !== '##'
 
   if (line_status_raw === '??') {
     status.untracked = [...(status.untracked || []), parts.join(' ')]
@@ -63,6 +64,7 @@ const parse_status= (raw: string): GitStatus => {
   const lines = raw.split('\n')
 
   return lines.reduce<GitStatus>(parse_status_line, {
+    has_changes: false,
     staged: {},
     unstaged: {},
     untracked: [],
@@ -98,7 +100,7 @@ const print_file_status = (status: GitStatus): string => {
 
 }
 
-const print_branch_status = (mod: RepositoryWithStatus): string => {
+export const print_branch_status = (mod: RepositoryWithStatus): string => {
 
   const branch = mod.status.head.upstream
     && mod.status.head.ahead === 0
@@ -118,22 +120,7 @@ const print_branch_status = (mod: RepositoryWithStatus): string => {
   return color(`[${branch}${remote_status}]`)
 }
 
-const has_changes = (status: GitStatus) => [
-    Boolean(status.untracked?.length),
-    Boolean(status.staged.modified?.length),
-    Boolean(status.staged.added?.length),
-    Boolean(status.staged.deleted?.length),
-    Boolean(status.staged.renamed?.length),
-    Boolean(status.staged.copied?.length),
-    Boolean(status.staged.unmerged?.length),
-    Boolean(status.unstaged.modified?.length),
-    Boolean(status.unstaged.deleted?.length),
-    Boolean(status.unstaged.renamed?.length),
-    Boolean(status.unstaged.copied?.length),
-    Boolean(status.unstaged.unmerged?.length),
-  ].some(v => v)
-
-const status = (repositories: Repository[]): Promise<RepositoryWithStatus[]> => Promise.all(repositories.map(async (mod) => ({
+const status = <R extends Repository>(repositories: R[]): Promise<RepositoryWithStatus<R>[]> => Promise.all(repositories.map(async (mod) => ({
     ...mod,
     status: parse_status((await bash('git', { cwd: mod.path }, 'status', '--porcelain', '-b'))[0]),
     current_branch: (await bash('git', { cwd: mod.path }, 'branch' ,'--show-current'))[0].trim()
@@ -149,11 +136,11 @@ export const print_status = async (statuses: Promise<RepositoryWithStatus[]>) =>
 
   console.log(
     statusList.map(mod => {
-      const color = has_changes(mod.status) ? yellowBright : cyanBright
+      const color = mod.status.has_changes ? yellowBright : cyanBright
 
       return [
         color(`${pad_right_to(mod.pretty_name, longest_name+1)} ${print_branch_status(mod)}`),
-        has_changes(mod.status) && print_file_status(mod.status)
+        mod.status.has_changes && print_file_status(mod.status)
       ].filter(s => !isEmpty(s)).join('\n')
     }).join('\n')
   )

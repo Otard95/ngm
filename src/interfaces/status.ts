@@ -1,6 +1,7 @@
 import { Repository } from "./ngm-dot";
 
 export interface GitStatus {
+  has_changes: boolean
   staged: {
     modified?: string[]
     added?: string[]
@@ -24,7 +25,10 @@ export interface GitStatus {
   }
 }
 
-export type RepositoryWithStatus = Repository & {
-  status: GitStatus
+export type RepositoryWithBranch = Repository & {
   current_branch: string
+}
+
+export type RepositoryWithStatus<R = Repository> = R & RepositoryWithBranch & {
+  status: GitStatus
 }
