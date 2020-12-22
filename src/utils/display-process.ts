@@ -6,31 +6,28 @@ import { pad_right_to } from "./pad-str";
 import { arrayForEachSequential, makeTrackablePromise, TrackablePromise } from "./promise";
 
 const loading_icons = ['⠏', '⠛', '⠹', '⠼', '⠶', '⠧']
-const displayProcessSingle = <R>(message: string, promise: Promise<R>): Promise<R> => {
+const displayProcessSingle = async <R>(message: string, promise: Promise<R>): Promise<R> => {
 
   let i = 0
-  process.stdout.write(`${message} ${chalk.blue(loading_icons[i])}`)
-  const loading_interval = setInterval(() => {
-    process.stdout.moveCursor(-1, 0, () => {
-      i = (i + 1) % loading_icons.length
-      process.stdout.write(chalk.blue(`${loading_icons[i]}`))
-    })
+  promisify(process.stdout.write.bind(process.stdout))(`${message} ${chalk.blue(loading_icons[i])}`)
+  const loading_interval = setInterval(async () => {
+    await promisify(rl.moveCursor)(process.stdout, -1, 0)
+    i = (i + 1) % loading_icons.length
+    process.stdout.write(chalk.blue(`${loading_icons[i]}`))
   }, 100)
-  return promise
-    .then(data => new Promise<R>((res) => {
-      clearInterval(loading_interval)
-      process.stdout.moveCursor(-1, 0, () => {
-        console.log(chalk.green('[ DONE ]'))
-        res(data)
-      })
-    }))
-    .catch(err => new Promise<R>((_res, rej) => {
-      clearInterval(loading_interval)
-      process.stdout.moveCursor(-1, 0, () => {
-        console.log(chalk.red('[ ERROR ]'))
-        rej(err)
-      })
-    }))
+
+  try {
+    const res = await promise
+    clearInterval(loading_interval)
+    await promisify(rl.moveCursor)(process.stdout, -1, 0)
+    console.log(chalk.green('[ DONE ]'))
+    return res
+  } catch (e) {
+    clearInterval(loading_interval)
+    await promisify(rl.moveCursor)(process.stdout, -1, 0)
+    console.log(chalk.red('[ ERROR ]'))
+    throw e
+  }
 
 }
 

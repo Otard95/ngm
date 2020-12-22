@@ -35,6 +35,8 @@ const parse_change = (status: Record<string, any>, code: string, ...change: stri
 
 const parse_status_line = (status: GitStatus, line: string): GitStatus => {
   const line_status_raw = line.substring(0, 2)
+  if (isEmpty(line_status_raw)) return status
+
   const parts = line.substring(3, line.length).split(' ')
   status.has_changes = status.has_changes || line_status_raw !== '##'
 
