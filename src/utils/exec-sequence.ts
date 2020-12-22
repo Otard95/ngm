@@ -29,9 +29,9 @@ export default class ExecSequence<C extends {}> {
       if (!fn) continue
 
       await new Promise((res, rej) => {
-        fn(context, args, res, rej, () => {
+        fn(context, args, res as () => void, rej, () => {
           done = true
-          res()
+          res(undefined)
         })
       })
 
