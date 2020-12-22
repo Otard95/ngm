@@ -13,7 +13,7 @@ const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...OPTIONS]
       ├╴ remove     Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
       ├╴ list       List all projects
       └╴ detail     Print detailed info for project: {rgb(247,192,12) ngm project detail <project-name>}
-    <git command>   Currently only 'status' and 'pull' are supported
+    <git command>   Currently only 'status', 'pull' and 'push' are supported
     
   OPTIONS`
 
