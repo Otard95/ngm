@@ -1,3 +1,6 @@
+import rl from 'readline'
+import { promisify } from 'util'
+import { noop } from "lodash"
 import NGMApi from "./api"
 import commands from './cli-commands'
 import ExecSequence from './utils/exec-sequence'
@@ -5,7 +8,6 @@ import init_flags from "./cli-flags"
 import read_dot from "./subroutines/read-dot"
 import { NGMDot, Project, ProjectId } from "./interfaces/ngm-dot"
 import { intersect } from "./utils/array"
-import { noop } from "lodash"
 
 const simple_usage = `usage: ngm [COMMAND] [PROJECT] [...OPTIONS]
   use the -h option for more info
@@ -21,6 +23,10 @@ export interface CLIContext {
 }
 
 export default async (): Promise<void> => {
+
+  await promisify(rl.cursorTo)(process.stdout, 0, 0)
+  await promisify(rl.clearScreenDown)(process.stdout)
+  console.log()
 
   const ngm_dot = await read_dot(process.cwd())
 

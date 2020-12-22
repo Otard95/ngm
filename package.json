@@ -27,7 +27,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-push": "(git stash push || exit 0) ; tsc -p . --noEmit ; code=$? ; (git stash pop || exit 0) ; (exit $code)"
+      "pre-push": "git stash push ; tsc -p . --noEmit ; code=$? ; git stash pop ; (exit $code)"
     }
   }
 }

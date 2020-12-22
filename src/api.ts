@@ -2,15 +2,16 @@ import { createHash } from "crypto"
 import difference from "lodash/difference"
 import { RepositoryId, NGMDot, Project, ProjectId, Repository } from "./interfaces/ngm-dot"
 import read_dot from "./subroutines/read-dot"
-import { status } from "./git-commands"
+import { status, pull } from "./git-commands"
 import { RepositoryWithStatus } from "./interfaces/status"
+import { PullInfo } from './git-commands/pull'
 import write_dot from "./subroutines/write-dot"
 import index_fs from "./subroutines/index-fs"
 import index_repo from './subroutines/index-repo'
 import { bash } from "./utils"
 import { repo_equal } from "./utils/repo"
 
-interface StatusArgs {
+interface RepoFilterArgs {
   project_id?: ProjectId
 }
 
@@ -40,7 +41,7 @@ class NGMApi {
     this.ngm_dot = ngm_dot
   }
 
-  public status(args: StatusArgs): Promise<RepositoryWithStatus[]> {
+  public status(args: RepoFilterArgs): Promise<RepositoryWithStatus[]> {
     const ngm_dot = {...this.ngm_dot}
     if (args.project_id) {
       const project = ngm_dot.project_map[args.project_id]
@@ -48,6 +49,16 @@ class NGMApi {
         ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
     }
     return status(ngm_dot.repositories)
+  }
+
+  public pull(args: RepoFilterArgs): Promise<PullInfo[]> {
+    const ngm_dot = {...this.ngm_dot}
+    if (args.project_id) {
+      const project = ngm_dot.project_map[args.project_id]
+      if (project)
+        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
+    }
+    return Promise.all(pull(ngm_dot.repositories).map<Promise<PullInfo>>(p => p.promise))
   }
 
   public async project_create(name: string, branch: string) {
