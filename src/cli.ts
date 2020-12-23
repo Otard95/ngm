@@ -85,18 +85,16 @@ export default async (): Promise<void> => {
     })
     .push(async (context, args, next, err, done): Promise<void> => {
 
-      const command_args = intersect(Array.from(cmds.keys()), args)
-      command_args.forEach(cmd => args.splice(args.indexOf(cmd), 1))
+      const command_args = intersect(args, Array.from(cmds.keys()))
 
-      if (command_args.length > 1) {
-        return err('You may only specify one command.')
-      }
       if (command_args.length > 0) {
         context.command = command_args[0]
       }
+
       
       const { cmd, cmd_arg_parser } = cmds.get(context.command) || {}
       if (!cmd) return err('You must specify a command')
+      args.splice(args.indexOf(context.command), 1)
       cmd_arg_parser && cmd_arg_parser(context, args, next, err, done)
 
       context.git_args = args
