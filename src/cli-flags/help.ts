@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import { CLIOpts } from '../interfaces/cli'
 import { SequenceFunc } from '../utils/exec-sequence'
 
-const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...OPTIONS]
+const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...REPOSITORY] [...OPTIONS]
 
   COMMANDS
 
