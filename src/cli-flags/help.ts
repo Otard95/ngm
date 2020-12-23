@@ -4,6 +4,10 @@ import { SequenceFunc } from '../utils/exec-sequence'
 
 const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...REPOSITORY] [...OPTIONS]
 
+  VERSION
+
+    1.0.0
+
   COMMANDS
 
     status          Display the status ow any relevant repositories.
