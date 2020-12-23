@@ -78,12 +78,8 @@ class NGMApi {
     args: GitCommandArgs,
     cliHandoff?: DisplayProcessCliHandoff<PullInfo, GitError>
   ): Promise<PromiseResult<PullInfo, GitError>[]> {
-    const ngm_dot = {...this.ngm_dot}
-    if (args.project_id) {
-      const project = ngm_dot.project_map[args.project_id]
-      if (project)
-        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
-    }
+    const ngm_dot = cloneDeep(this.ngm_dot)
+    this.filterReposByGitCommandArgs(ngm_dot, args)
     const processes = pull(ngm_dot.repositories, args.git_args)
     return cliHandoff
       ? cliHandoff(processes)
