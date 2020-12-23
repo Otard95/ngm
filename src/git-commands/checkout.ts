@@ -5,27 +5,38 @@ import isEmpty from 'lodash/isEmpty'
 import { bash } from "../utils"
 import status, { print_branch_status } from './status'
 import { Repository } from '../interfaces/ngm-dot'
-import displayProcess, { ProcessInput } from '../utils/display-process'
+import { ProcessInput } from '../utils/display-process'
 import { pad_right_to } from '../utils/pad-str'
+import { PromiseResult } from '../utils/promise'
+import GitError from './common/git-error'
 
 export interface CheckoutInfo extends Repository { checkout_output: string }
 const checkout = (repositories: Repository[], git_args: string[] = []): ProcessInput<CheckoutInfo>[] => repositories
   .map<ProcessInput<CheckoutInfo>>((mod): ProcessInput<CheckoutInfo> => {
     return {
       label: relative(process.cwd(), mod.path) || './',
-      promise: bash('git', { cwd: mod.path }, 'push', ...git_args).then(([out]) => ({ ...mod, checkout_output: out }))
+      promise: bash('git', { cwd: mod.path }, 'checkout', ...git_args)
+        .then(([out]) => ({ ...mod, checkout_output: out }))
+        .catch(err => {throw new GitError(err.message, mod)})
     }
   })
 export default checkout
-export const print_checkout = async (processes: ProcessInput<CheckoutInfo>[]) => {
+export const print_checkout = async (results: PromiseResult<CheckoutInfo, GitError>[]) => {
 
-  const pullInfoList = (await status(await displayProcess(...processes)))
+  const resolvedCheckoutInfo = results
+    .map<CheckoutInfo>(r => {
+      return r.success
+        ? r.res
+        : { ...r.err.repository, checkout_output: r.err.message }
+    })
+
+  const checkoutInfoList = (await status(resolvedCheckoutInfo))
     .map(s => ({ ...s, pretty_name: (relative(process.cwd(), s.path) || './') }))
 
-  const longest_name = pullInfoList.reduce((acc, s) => Math.max(acc, s.pretty_name.length), 0)
+  const longest_name = checkoutInfoList.reduce((acc, s) => Math.max(acc, s.pretty_name.length), 0)
 
   console.log(
-    pullInfoList.map(mod => {
+    checkoutInfoList.map(mod => {
       const color = mod.status.has_changes ? yellowBright : cyanBright
 
       return [

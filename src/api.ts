@@ -2,7 +2,7 @@ import { createHash } from "crypto"
 import difference from "lodash/difference"
 import { RepositoryId, NGMDot, Project, ProjectId, Repository } from "./interfaces/ngm-dot"
 import read_dot from "./subroutines/read-dot"
-import { status, pull } from "./git-commands"
+import { status, pull, push } from "./git-commands"
 import { RepositoryWithStatus } from "./interfaces/status"
 import { PullInfo } from './git-commands/pull'
 import write_dot from "./subroutines/write-dot"
@@ -10,10 +10,18 @@ import index_fs from "./subroutines/index-fs"
 import index_repo from './subroutines/index-repo'
 import { bash } from "./utils"
 import { repo_equal } from "./utils/repo"
+import { ProcessInput } from "./utils/display-process"
+import { PromiseResult, promiseSome } from "./utils/promise"
+import { PushInfo } from "./git-commands/push"
+import checkout, { CheckoutInfo } from "./git-commands/checkout"
+import GitError from "./git-commands/common/git-error"
 
-interface RepoFilterArgs {
+interface GitCommandArgs {
   project_id?: ProjectId
+  git_args?: string[]
 }
+type CliHandoff<T, R> = (a: T) => Promise<R>
+type DisplayProcessCliHandoff<I, E = Error> = CliHandoff<ProcessInput<I>[], PromiseResult<I, E>[]>
 
 class NGMApi {
 
@@ -41,7 +49,7 @@ class NGMApi {
     this.ngm_dot = ngm_dot
   }
 
-  public status(args: RepoFilterArgs): Promise<RepositoryWithStatus[]> {
+  public status(args: GitCommandArgs): Promise<RepositoryWithStatus[]> {
     const ngm_dot = {...this.ngm_dot}
     if (args.project_id) {
       const project = ngm_dot.project_map[args.project_id]
@@ -51,14 +59,36 @@ class NGMApi {
     return status(ngm_dot.repositories)
   }
 
-  public pull(args: RepoFilterArgs): Promise<PullInfo[]> {
+  public pull(
+    args: GitCommandArgs,
+    cliHandoff?: DisplayProcessCliHandoff<PullInfo, GitError>
+  ): Promise<PromiseResult<PullInfo, GitError>[]> {
     const ngm_dot = {...this.ngm_dot}
     if (args.project_id) {
       const project = ngm_dot.project_map[args.project_id]
       if (project)
         ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
     }
-    return Promise.all(pull(ngm_dot.repositories).map<Promise<PullInfo>>(p => p.promise))
+    const processes = pull(ngm_dot.repositories, args.git_args)
+    return cliHandoff
+      ? cliHandoff(processes)
+      : promiseSome(processes.map(p => p.promise))
+  }
+
+  public push(
+    args: GitCommandArgs,
+    cliHandoff?: DisplayProcessCliHandoff<PushInfo, GitError>
+  ): Promise<PromiseResult<PushInfo, GitError>[]> {
+    const ngm_dot = {...this.ngm_dot}
+    if (args.project_id) {
+      const project = ngm_dot.project_map[args.project_id]
+      if (project)
+        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
+    }
+    const processes = push(ngm_dot.repositories, args.git_args)
+    return cliHandoff
+      ? cliHandoff(processes)
+      : promiseSome(processes.map(p => p.promise))
   }
 
   public async project_create(name: string, branch: string) {
@@ -118,7 +148,7 @@ class NGMApi {
 
   }
 
-  public async checkout(repo_id: RepositoryId, branch: string): ReturnType<typeof bash> {
+  private async checkoutSingle(repo_id: RepositoryId, branch: string): ReturnType<typeof bash> {
     
     const repo = this.ngm_dot.repository_map[repo_id]
 
@@ -135,6 +165,39 @@ class NGMApi {
 
     return res
 
+  }
+  public checkout(repo_id: RepositoryId, branch: string): ReturnType<typeof bash>;
+  public checkout(
+    args: GitCommandArgs,
+    cliHandoff?: DisplayProcessCliHandoff<CheckoutInfo>
+  ): Promise<PromiseResult<CheckoutInfo, GitError>[]>;
+  public checkout(...args: unknown[]) {
+
+    if (args.length > 2 || args.length === 0)
+      throw new Error(`Unexpected number of parameters, got ${args.length} but expected 1 or 2`)
+
+    if (args.length === 2 && typeof args[0] === 'string' && typeof args[1] === 'string')
+      return this.checkoutSingle(args[0], args[1])
+
+    if (typeof args[0] !== 'object')
+      throw new Error(`Argument 1 was of unexpected type. Expected string or RepoFilterArgs, but got ${typeof args[0]}`)
+    if (args.length === 2 && typeof args[1] !== 'function')
+      throw new Error(`Argument 2 was of unexpected type. Expected string, function or undefined, but got ${typeof args[1]}`)
+
+    const cmdArgs = args[0] as GitCommandArgs
+    const cliHandoff = args.length == 2 && args[1] as DisplayProcessCliHandoff<CheckoutInfo>
+
+    const ngm_dot = {...this.ngm_dot}
+    if (cmdArgs.project_id) {
+      const project = ngm_dot.project_map[cmdArgs.project_id]
+      if (project)
+        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
+    }
+    const processes = checkout(ngm_dot.repositories, cmdArgs.git_args)
+    return cliHandoff
+      ? cliHandoff(processes)
+      : promiseSome(processes.map(p => p.promise))
+    
   }
 
   public async re_index() {

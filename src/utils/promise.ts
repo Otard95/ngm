@@ -26,6 +26,27 @@ export const makeTrackablePromise = <R>(promise: Promise<R>): TrackablePromise<R
 
 }
 
+export interface PromiseResultOk<R> {
+  success: true
+  res: R
+}
+export interface PromiseResultErr<E = Error> {
+  success: false
+  err: E
+}
+export type PromiseResult<R, E = Error> = PromiseResultOk<R> | PromiseResultErr<E> 
+export const promiseSome = <R, E = Error>(promisees: Promise<R>[]): Promise<PromiseResult<R, E>[]> => {
+  return Promise.all(
+    promisees.map<Promise<PromiseResult<R, E>>>(async p => {
+      try {
+        const res = await p
+        return { success: true, res }
+      } catch (err) {
+        return { success: false, err }
+      }
+    }
+  ))
+}
 
 export const arrayForEachSequential = async <T>(arr: T[], mapper: (v: T, i: number, arr: T[]) => void): Promise<void> => {
 

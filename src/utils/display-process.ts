@@ -3,7 +3,7 @@ import { promisify } from 'util'
 import chalk from "chalk";
 import caretPos from "./caretPos";
 import { pad_right_to } from "./pad-str";
-import { arrayForEachSequential, makeTrackablePromise, TrackablePromise } from "./promise";
+import { arrayForEachSequential, makeTrackablePromise, PromiseResult, promiseSome, TrackablePromise } from "./promise";
 
 const loading_icons = ['⠏', '⠛', '⠹', '⠼', '⠶', '⠧']
 const displayProcessSingle = async <R>(message: string, promise: Promise<R>): Promise<R> => {
@@ -41,7 +41,7 @@ export interface ProcessInput<R> {
 }
 export interface DisplayProcess {
   <R>(message: string, promise: Promise<R>): Promise<R>
-  <R>(...precesses: ProcessInput<R>[]): Promise<R[]>
+  <R, E = Error>(...precesses: ProcessInput<R>[]): Promise<PromiseResult<R, E>[]>
 }
 const displayProcess: DisplayProcess = async <R>(...args: unknown[]) => {
 
@@ -88,7 +88,7 @@ const displayProcess: DisplayProcess = async <R>(...args: unknown[]) => {
   const loading_interval = setInterval(printStatus, 100)
 
   // await result
-  const res = await Promise.all(processes.map(p => p.promise))
+  const res = await promiseSome(processes.map(p => p.promise))
   // stop status update cycle
   clearInterval(loading_interval)
   // clear update output
