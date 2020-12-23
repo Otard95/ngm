@@ -14,11 +14,12 @@ import { ProcessInput } from "./utils/display-process"
 import { PromiseResult, promiseSome } from "./utils/promise"
 import GitError from "./git-commands/common/git-error"
 
-import { status, pull, push, add, checkout } from "./git-commands"
+import { status, pull, push, add, checkout, commit } from "./git-commands"
 import { PullInfo } from './git-commands/pull'
 import { PushInfo } from "./git-commands/push"
 import { CheckoutInfo } from "./git-commands/checkout"
 import { AddInfo } from "./git-commands/add"
+import { CommitInfo } from "./git-commands/commit"
 
 interface GitCommandArgs {
   project_id?: ProjectId
@@ -106,6 +107,22 @@ class NGMApi {
         ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
     }
     const processes = add(ngm_dot.repositories, args.git_args)
+    return cliHandoff
+      ? cliHandoff(processes)
+      : promiseSome(processes.map(p => p.promise))
+  }
+
+  public commit(
+    args: GitCommandArgs,
+    cliHandoff?: DisplayProcessCliHandoff<CommitInfo, GitError>
+  ): Promise<PromiseResult<CommitInfo, GitError>[]> {
+    const ngm_dot = {...this.ngm_dot}
+    if (args.project_id) {
+      const project = ngm_dot.project_map[args.project_id]
+      if (project)
+        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
+    }
+    const processes = commit(ngm_dot.repositories, args.git_args)
     return cliHandoff
       ? cliHandoff(processes)
       : promiseSome(processes.map(p => p.promise))
