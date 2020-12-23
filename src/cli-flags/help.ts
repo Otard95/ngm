@@ -13,7 +13,8 @@ const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...OPTIONS]
       ├╴ remove     Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
       ├╴ list       List all projects
       └╴ detail     Print detailed info for project: {rgb(247,192,12) ngm project detail <project-name>}
-    <git command>   Currently only 'status', 'pull', 'push' and 'checkout' are supported
+    <git command>   Currently supported commands are:
+                      status, pull, push, checkout, add & commit
     
   OPTIONS`
 
