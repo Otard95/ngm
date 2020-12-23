@@ -1,5 +1,6 @@
 import { createHash } from "crypto"
 import difference from "lodash/difference"
+import { cloneDeep } from "lodash"
 
 import write_dot from "./subroutines/write-dot"
 import index_fs from "./subroutines/index-fs"
@@ -23,6 +24,7 @@ import { CommitInfo } from "./git-commands/commit"
 
 interface GitCommandArgs {
   project_id?: ProjectId
+  repository_ids?: RepositoryId[]
   git_args?: string[]
 }
 type CliHandoff<T, R> = (a: T) => Promise<R>
@@ -54,13 +56,21 @@ class NGMApi {
     this.ngm_dot = ngm_dot
   }
 
-  public status(args: GitCommandArgs): Promise<RepositoryWithStatus[]> {
-    const ngm_dot = {...this.ngm_dot}
+  private filterReposByGitCommandArgs(ngm_dot: NGMDot, args: GitCommandArgs): void {
     if (args.project_id) {
       const project = ngm_dot.project_map[args.project_id]
       if (project)
         ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
     }
+    const repo_ids = args.repository_ids
+    if (repo_ids && repo_ids.length > 0) {
+      ngm_dot.repositories = ngm_dot.repositories.filter(m => repo_ids.includes(m.id))
+    }
+  }
+
+  public status(args: GitCommandArgs): Promise<RepositoryWithStatus[]> {
+    const ngm_dot = cloneDeep(this.ngm_dot)
+    this.filterReposByGitCommandArgs(ngm_dot, args)
     return status(ngm_dot.repositories)
   }
 
@@ -84,12 +94,8 @@ class NGMApi {
     args: GitCommandArgs,
     cliHandoff?: DisplayProcessCliHandoff<PushInfo, GitError>
   ): Promise<PromiseResult<PushInfo, GitError>[]> {
-    const ngm_dot = {...this.ngm_dot}
-    if (args.project_id) {
-      const project = ngm_dot.project_map[args.project_id]
-      if (project)
-        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
-    }
+    const ngm_dot = cloneDeep(this.ngm_dot)
+    this.filterReposByGitCommandArgs(ngm_dot, args)
     const processes = push(ngm_dot.repositories, args.git_args)
     return cliHandoff
       ? cliHandoff(processes)
@@ -100,12 +106,8 @@ class NGMApi {
     args: GitCommandArgs,
     cliHandoff?: DisplayProcessCliHandoff<AddInfo, GitError>
   ): Promise<PromiseResult<AddInfo, GitError>[]> {
-    const ngm_dot = {...this.ngm_dot}
-    if (args.project_id) {
-      const project = ngm_dot.project_map[args.project_id]
-      if (project)
-        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
-    }
+    const ngm_dot = cloneDeep(this.ngm_dot)
+    this.filterReposByGitCommandArgs(ngm_dot, args)
     const processes = add(ngm_dot.repositories, args.git_args)
     return cliHandoff
       ? cliHandoff(processes)
@@ -116,12 +118,8 @@ class NGMApi {
     args: GitCommandArgs,
     cliHandoff?: DisplayProcessCliHandoff<CommitInfo, GitError>
   ): Promise<PromiseResult<CommitInfo, GitError>[]> {
-    const ngm_dot = {...this.ngm_dot}
-    if (args.project_id) {
-      const project = ngm_dot.project_map[args.project_id]
-      if (project)
-        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
-    }
+    const ngm_dot = cloneDeep(this.ngm_dot)
+    this.filterReposByGitCommandArgs(ngm_dot, args)
     const processes = commit(ngm_dot.repositories, args.git_args)
     return cliHandoff
       ? cliHandoff(processes)

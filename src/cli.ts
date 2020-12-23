@@ -1,3 +1,4 @@
+import { resolve } from 'path'
 import rl from 'readline'
 import { promisify } from 'util'
 import { noop } from "lodash"
@@ -6,7 +7,7 @@ import commands from './cli-commands'
 import ExecSequence from './utils/exec-sequence'
 import init_flags from "./cli-flags"
 import read_dot from "./subroutines/read-dot"
-import { NGMDot, Project, ProjectId } from "./interfaces/ngm-dot"
+import { NGMDot, Project, ProjectId, Repository, RepositoryId } from "./interfaces/ngm-dot"
 import { intersect } from "./utils/array"
 
 const simple_usage = `usage: ngm [COMMAND] [PROJECT] [...OPTIONS]
@@ -19,6 +20,7 @@ export interface CLIContext {
   flags?: string[]
   git_args?: string[]
   project_id?: ProjectId
+  repository_ids?: RepositoryId[]
   ngm_dot: NGMDot
 }
 
@@ -57,6 +59,24 @@ export default async (): Promise<void> => {
       if (selected_project.length > 0) {
         context.project_id = project_name_map[selected_project[0]].id
       }
+
+      next()
+
+    })
+    .push(async (context, args, next, _err) => {
+
+      const repository_paths = context.ngm_dot.repositories.map((r) => r.path)
+
+      const repository_ids = args
+        .filter(arg => /(\.\/)?([\w-]+\/)*([\w-]+)?/.test(arg))
+        .map(arg => resolve(process.cwd(), arg))
+        .filter(path => repository_paths.includes(path))
+        .map(path => context.ngm_dot.repositories.find(repo => repo.path === path))
+        .filter((repo): repo is Repository => repo !== undefined)
+        .map(repo => repo.id)
+
+      if (repository_ids.length > 0)
+        context.repository_ids = repository_ids
 
       next()
 
