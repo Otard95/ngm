@@ -67,16 +67,18 @@ export default async (): Promise<void> => {
 
       const repository_paths = context.ngm_dot.repositories.map((r) => r.path)
 
-      const repository_ids = args
+      const arg_to_repo_ids = args
         .filter(arg => /(\.\/)?([\w-]+\/)*([\w-]+)?/.test(arg))
-        .map(arg => resolve(process.cwd(), arg))
-        .filter(path => repository_paths.includes(path))
-        .map(path => context.ngm_dot.repositories.find(repo => repo.path === path))
-        .filter((repo): repo is Repository => repo !== undefined)
-        .map(repo => repo.id)
+        .map(arg => ([arg, resolve(process.cwd(), arg)]))
+        .filter(argToPath => ([argToPath[0], repository_paths.includes(argToPath[1])]))
+        .map(argToPath => ([argToPath[0], context.ngm_dot.repositories.find(repo => repo.path === argToPath[1])]))
+        .filter((argToRepo): argToRepo is [string, Repository] => argToRepo[1] !== undefined)
+        .map(argToRepo => ([argToRepo[0], argToRepo[1].id]))
 
-      if (repository_ids.length > 0)
-        context.repository_ids = repository_ids
+      if (arg_to_repo_ids.length > 0)
+        context.repository_ids = arg_to_repo_ids.map(arg_to_repo_id => arg_to_repo_id[1])
+      
+      arg_to_repo_ids.forEach(([arg]) => args.splice(args.indexOf(arg), 1))
 
       next()
 
