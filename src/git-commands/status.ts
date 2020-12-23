@@ -79,7 +79,7 @@ const parse_status= (raw: string): GitStatus => {
 
 }
 
-const print_file_status = (status: GitStatus): string => {
+export const print_file_status = (status: GitStatus): string => {
 
   const lines = []
 
