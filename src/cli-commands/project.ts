@@ -23,8 +23,10 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
 
   const buff: SomePartial<ProjectBuffer, 'sub_cmd'> = { args: [] }
   args.forEach((arg): any => {
-    if (!buff.sub_cmd && ['create', 'add', 'remove', 'list', 'detail'].includes(arg))
+    if (!buff.sub_cmd && ['create', 'add', 'remove', 'list', 'detail'].includes(arg)) {
+      args.splice(args.indexOf(arg), 1)
       return buff.sub_cmd = arg as ProjectBuffer['sub_cmd']
+    }
 
     if (!arg.startsWith('-')) buff.args.push(arg)
   })
@@ -39,8 +41,9 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
     case 'add':
     case 'remove':
       if (!context.project_id) return err(buff.args.length > 0 ? `Unknown project: ${chalk.yellow(buff.args[0])}` : 'Missing project name')
-      if (buff.args.length === 0) return err(chalk`project ${buff.sub_cmd} requires {yellow <project-name>} and {yellow <...repo-path>}`)
-      const non_repository_paths = get_non_repo_paths(context.ngm_dot.repositories, buff.args)
+      if (!context.repository_ids || context.repository_ids.length === 0)
+        return err(chalk`project ${buff.sub_cmd} requires {yellow <project-name>} and {yellow <...repo-path>}`)
+      const non_repository_paths = get_non_repo_paths(context.ngm_dot.repositories, args)
       if (non_repository_paths.length > 0) return err(`Director${
           non_repository_paths.length > 1
             ? 'ies'
@@ -50,16 +53,13 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
             ? 'are not repositories'
             : 'is not a repository'
         }`)
-      buff.args = buff.args
-        .map(a => (context.ngm_dot.repositories.find(m => m.path === resolve(process.cwd(), a)) as Repository).id)
+      buff.args = context.repository_ids
       break
     case 'detail':
       if (!context.project_id) return err(buff.args.length > 0 ? `Unknown project: ${chalk.yellow(buff.args[0])}` : 'Missing project name')
   }
 
-  args.splice(args.indexOf(buff.sub_cmd))
   buff.args.forEach(arg => args.splice(args.indexOf(arg)))
-
 
   context.command_buffer = buff
 
