@@ -219,11 +219,8 @@ class NGMApi {
     const cliHandoff = args.length == 2 && args[1] as DisplayProcessCliHandoff<CheckoutInfo>
 
     const ngm_dot = {...this.ngm_dot}
-    if (cmdArgs.project_id) {
-      const project = ngm_dot.project_map[cmdArgs.project_id]
-      if (project)
-        ngm_dot.repositories = ngm_dot.repositories.filter(m => project.repository_ids.includes(m.id))
-    }
+    this.filterReposByGitCommandArgs(ngm_dot, cmdArgs)
+
     const processes = checkout(ngm_dot.repositories, cmdArgs.git_args)
     return cliHandoff
       ? cliHandoff(processes)
