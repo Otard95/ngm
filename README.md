@@ -24,3 +24,16 @@ modules, so it can be moved out of the project and executed form anywhere.
 From here its up to you what you want to do. One option is to create an
 alias for executing the file with node, another would be to package the
 script with something like [pkg](https://github.com/vercel/pkg).
+
+## TODO
+
+### Bugfixes
+
+- [ ] Checkout command - error messages doesn't display
+
+### Features
+
+- [ ] Project command - add remove option
+- [ ] Project command - add aliases for example `ngm p new` in place of `ngm project create`, and more
+- [ ] More git commands
+- [ ] Bash completion
