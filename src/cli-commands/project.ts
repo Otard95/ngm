@@ -1,8 +1,7 @@
-import { relative, resolve } from 'path'
+import { relative } from 'path'
 import { CommandFn } from ".";
 import { SequenceFunc } from "../utils/exec-sequence";
 import { CLIContext } from "../cli";
-import { Repository } from "../interfaces/ngm-dot";
 import displayProcess from '../utils/display-process';
 import chalk from 'chalk';
 import { pad_right_to } from '../utils/pad-str';
@@ -14,24 +13,13 @@ interface ProjectBuffer {
   args: string[]
 }
 
-const get_non_repo_paths = (repositories: Repository[], paths: string[]): string[] => {
-  const repository_paths = repositories.map(m => m.path)
-  return paths.filter(p => !repository_paths.includes(resolve(process.cwd(), p)))
-}
-
 export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err) => {
-
   const buff: SomePartial<ProjectBuffer, 'sub_cmd'> = { args: [] }
-  args.forEach((arg): any => {
-    if (!buff.sub_cmd && ['create', 'add', 'remove', 'list', 'detail'].includes(arg)) {
-      args.splice(args.indexOf(arg), 1)
-      return buff.sub_cmd = arg as ProjectBuffer['sub_cmd']
-    }
 
-    if (!arg.startsWith('-')) buff.args.push(arg)
-  })
+  if (!['create', 'add', 'remove', 'list', 'detail'].includes(args[0]))
+    return err('The project command requires specifier')
+  buff.sub_cmd = args.shift() as ProjectBuffer['sub_cmd']
 
-  if (!buff.sub_cmd) return err('The project command requires specifier')
   switch(buff.sub_cmd) {
     case 'create':
       if (context.project_id) return err('That project already existed')
@@ -40,19 +28,11 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
       break
     case 'add':
     case 'remove':
-      if (!context.project_id) return err(buff.args.length > 0 ? `Unknown project: ${chalk.yellow(buff.args[0])}` : 'Missing project name')
+      if (!context.project_id)
+        return err(buff.args.length > 0 ? `Unknown project: ${chalk.yellow(buff.args[0])}` : 'Missing project name')
       if (!context.repository_ids || context.repository_ids.length === 0)
         return err(chalk`project ${buff.sub_cmd} requires {yellow <project-name>} and {yellow <...repo-path>}`)
-      const non_repository_paths = get_non_repo_paths(context.ngm_dot.repositories, args)
-      if (non_repository_paths.length > 0) return err(`Director${
-          non_repository_paths.length > 1
-            ? 'ies'
-            : 'y'
-        } ${non_repository_paths.map(p => chalk.yellow(relative(process.cwd(), p) || './')).join(', ')} ${
-          non_repository_paths.length > 1
-            ? 'are not repositories'
-            : 'is not a repository'
-        }`)
+
       buff.args = context.repository_ids
       break
     case 'detail':
@@ -60,6 +40,9 @@ export const args_parser: SequenceFunc<CLIContext> = (context, args, _next, err)
   }
 
   buff.args.forEach(arg => args.splice(args.indexOf(arg)))
+
+  if (args.length > 0)
+    return err(`Unknown arguments: ${args.join(' ')}`)
 
   context.command_buffer = buff
 
