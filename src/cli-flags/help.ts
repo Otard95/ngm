@@ -11,12 +11,15 @@ const usage = chalk`{cyan.bold usage:} ngm [COMMAND] [PROJECT] [...REPOSITORY] [
   COMMANDS
 
     status          Display the status ow any relevant repositories.
-    project       
+
+    project         All project sub commands must immediately follow the project keyword
+      │
       ├╴ create     Create a new project: {rgb(247,192,12) ngm project create <project-name> <new-branch-name>}
       ├╴ add        Add repositories to a project: {rgb(247,192,12) ngm project add <project-name> <...repo-path>}
       ├╴ remove     Remove repositories from a project: {rgb(247,192,12) ngm project remove <project-name> <...repo-path>}
       ├╴ list       List all projects
       └╴ detail     Print detailed info for project: {rgb(247,192,12) ngm project detail <project-name>}
+      
     <git command>   Currently supported commands are:
                       status, pull, push, checkout, add & commit
     
