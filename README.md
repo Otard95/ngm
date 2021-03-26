@@ -37,3 +37,4 @@ script with something like [pkg](https://github.com/vercel/pkg).
 - [ ] Project command - add aliases for example `ngm p new` in place of `ngm project create`, and more
 - [ ] More git commands
 - [ ] Bash completion
+- [ ] Simplify checkout command
