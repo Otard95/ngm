@@ -122,7 +122,8 @@ export const print_branch_status = (mod: RepositoryWithStatus): string => {
   return color(`[${branch}${remote_status}]`)
 }
 
-const status = <R extends Repository>(repositories: R[]): Promise<RepositoryWithStatus<R>[]> => Promise.all(repositories.map(async (mod) => ({
+const status = <R extends Repository>(repositories: R[]): Promise<RepositoryWithStatus<R>[]> =>
+  Promise.all(repositories.map(async (mod) => ({
     ...mod,
     status: parse_status((await bash('git', { cwd: mod.path }, 'status', '--porcelain', '-b'))[0]),
     current_branch: (await bash('git', { cwd: mod.path }, 'branch' ,'--show-current'))[0].trim()
