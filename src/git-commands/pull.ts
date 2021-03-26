@@ -11,7 +11,10 @@ import { PromiseResult } from '../utils/promise'
 import GitError from './common/git-error'
 
 export interface PullInfo extends Repository { pull_output: string }
-const pull = (repositories: Repository[], git_args: string[] = []): ProcessInput<PullInfo>[] => repositories
+const pull = (
+  repositories: Repository[],
+  git_args: string[] = []
+): ProcessInput<PullInfo>[] => repositories
   .map<ProcessInput<PullInfo>>((mod): ProcessInput<PullInfo> => {
     return {
       label: relative(process.cwd(), mod.path) || './',
