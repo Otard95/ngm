@@ -21,6 +21,22 @@
             cobra-cli
           ];
         };
+
+        packages.default = let
+          version = "2.0.0";
+        in pkgs.buildGoModule {
+
+          pname = "ngm";
+          inherit version;
+
+          src = ./.;
+
+          buildInputs = with pkgs; [ git ];
+
+          vendorHash = "sha256-TsoPc/hgYLUTwLyCNKlt1A+r4B94u1ciY7F/JCo6W1M=";
+          nativeCheckInputs = with pkgs; [ less ];
+
+        };
       }
     );
 }
