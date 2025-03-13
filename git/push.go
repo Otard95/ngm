@@ -8,7 +8,7 @@ import (
 	"github.com/Otard95/ngm/ui"
 )
 
-func Pull(userArgs []string) {
+func Push(userArgs []string) {
 	dirs := getDirectories(false)
 
 	tasks := slice.Map(dirs, func(dir string, _ int) ui.Task[string] {
@@ -16,7 +16,7 @@ func Pull(userArgs []string) {
 			Name:  dir,
 			State: ui.NotStarted,
 			Run: func() (string, error) {
-				args := slice.Concat([]string{"-C", dir, "pull"}, userArgs)
+				args := slice.Concat([]string{"-C", dir, "push"}, userArgs)
 				cmd := exec.Command("git", args...)
 				out, err := cmd.CombinedOutput()
 				out_str := string(out)

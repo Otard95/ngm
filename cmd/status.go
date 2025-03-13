@@ -30,7 +30,7 @@ import (
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Check the status of repositories",
+	Short: "Run the `git status` command in this and all nested reposiroies",
 	Long: `Recursively checks the status of this and each child repository under the
 current directory.`,
 	Run: func(cmd *cobra.Command, args []string) {

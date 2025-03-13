@@ -27,28 +27,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// pullCmd represents the pull command
-var pullCmd = &cobra.Command{
-	Use:   "pull",
-	Short: "Run the `git pull` command in this and all nested reposiroies",
-	// Long: `This will run the pull`, // TODO: Fill this out
+// pushCmd represents the pull command
+var pushCmd = &cobra.Command{
+	Use:   "push",
+	Short: "Will run the `git push` command in this and all nested repositories",
+	// Long: `...`, // TODO: Fill this out
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Debugf("Running pull cmd - args: %v\n", args)
-		git.Pull(args)
-		log.Debugln("Finished pull cmd")
+		log.Debugf("Running push cmd - args: %v\n", args)
+		git.Push(args)
+		log.Debugln("Finished push cmd")
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(pullCmd)
+	rootCmd.AddCommand(pushCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// pullCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// pushCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// pullCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// pushCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
