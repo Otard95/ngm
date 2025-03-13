@@ -17,13 +17,13 @@ type TaskState int
 func (s TaskState) Icon(spinner spinner.Model) string {
 	switch s {
 	case NotStarted:
-		return "•"
+		return " • "
 	case Running:
 		return spinner.View()
 	case Complete:
-		return SuccessStyle.Render("✔")
+		return SuccessStyle.Render(" ✔ ")
 	case Error:
-		return ErrorStyle.Render("⨯")
+		return ErrorStyle.Render(" ⨯ ")
 	}
 	return "?"
 }
@@ -92,6 +92,7 @@ func initialModel[T any](tasks []Task[T]) model[T] {
 func (m model[any]) Init() tea.Cmd {
 	cmds := slice.Map(m.tasks, func(t Task[any], i int) tea.Cmd {
 		return func() tea.Msg {
+			m.tasks[i].State = Running
 			value, err := t.Run()
 			return TaskMsg[any]{Index: i, Value: value, Error: err}
 		}
@@ -116,7 +117,7 @@ func (m model[any]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		if m.ready {
+		if !m.ready {
 			m.viewport = viewport.New(msg.Width, msg.Height)
 			m.ready = true
 		} else {
@@ -133,9 +134,10 @@ func (m model[any]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.tasks[msg.Index].State = Error
 		}
+	}
 
-	case spinner.TickMsg:
-		m.spinner, cmd = m.spinner.Update(msg)
+	m.spinner, cmd = m.spinner.Update(msg)
+	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
@@ -150,6 +152,10 @@ func (m model[any]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	)
 
 	m.viewport, cmd = m.viewport.Update(msg)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
 	return m, tea.Batch(cmds...)
 }
 
