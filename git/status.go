@@ -174,16 +174,9 @@ func Status() {
 
 	tasks := slice.Map(dirs, func(dir string, _ int) ui.Task[*status] {
 		return ui.Task[*status]{
-			Name:  dir,
-			State: ui.NotStarted,
+			Name: dir,
 			Run: func() (*status, error) {
-				cmd := exec.Command("git", "-C", dir, "status", "--porcelain=v2", "-b")
-				out, err := cmd.CombinedOutput()
-				out_str := string(out)
-				if err != nil {
-					return nil, err
-				}
-				return parseGitStatus(&out_str), nil
+				return getStatus(dir)
 			},
 		}
 	})
@@ -198,6 +191,16 @@ func Status() {
 			fmt.Printf(" %s %s %s\n", ui.SuccessStyle.Render("✔"), dir, statuz.Print())
 		}
 	}
+}
+
+func getStatus(dir string) (*status, error) {
+	cmd := exec.Command("git", "-C", dir, "status", "--porcelain=v2", "-b")
+	out, err := cmd.CombinedOutput()
+	out_str := string(out)
+	if err != nil {
+		return nil, err
+	}
+	return parseGitStatus(&out_str), nil
 }
 
 func parseGitStatus(raw *string) *status {
