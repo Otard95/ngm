@@ -134,33 +134,37 @@ func (s *status) Print() string {
 	out += "\n"
 
 	if len(s.staged) > 0 {
+		out += "  Staged:\n"
 		out += slice.Join(
 			slice.Map(s.staged, func(s change, _ int) string {
-				return staged_style.Render(s.String())
+				return "    " + staged_style.Render(s.String())
 			}),
 			"\n",
 		) + "\n"
 	}
 	if len(s.unstaged) > 0 {
+		out += "  Unstaged:\n"
 		out += slice.Join(
 			slice.Map(s.unstaged, func(s change, _ int) string {
-				return unstaged_style.Render(s.String())
+				return "    " + unstaged_style.Render(s.String())
 			}),
 			"\n",
 		) + "\n"
 	}
 	if len(s.unmerged) > 0 {
+		out += "  Unmerged:\n"
 		out += slice.Join(
 			slice.Map(s.unmerged, func(s unmergedChange, _ int) string {
-				return unstaged_style.Render(s.String())
+				return "    " + unstaged_style.Render(s.String())
 			}),
 			"\n",
 		) + "\n"
 	}
 	if len(s.untracked) > 0 {
+		out += "  Untracked:\n"
 		out += slice.Join(
 			slice.Map(s.untracked, func(u string, _ int) string {
-				return untracked_style.Render(" " + u)
+				return "    " + untracked_style.Render(" "+u)
 			}),
 			"\n",
 		) + "\n"
