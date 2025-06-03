@@ -71,11 +71,11 @@ func (diff diff) Patch() string {
 func Diff() {
 	dirs := getDirectories(false)
 
-	tasks := slice.Map(dirs, func(dir string, _ int) ui.Task[*[]diff] {
-		return ui.Task[*[]diff]{
+	tasks := slice.Map(dirs, func(dir string, _ int) ui.Task[[]diff] {
+		return ui.Task[[]diff]{
 			Name:  dir,
 			State: ui.NotStarted,
-			Run: func() (*[]diff, error) {
+			Run: func() ([]diff, error) {
 				return getDiff(dir)
 			},
 		}
@@ -90,7 +90,7 @@ func Diff() {
 		} else {
 			fmt.Printf(" %s %s\n%s\n", ui.SuccessStyle.Render("✔"), dir, slice.Join(
 				slice.Map(
-					*out,
+					out,
 					func(d diff, _ int) string {
 						return d.String()
 					},
@@ -101,7 +101,7 @@ func Diff() {
 	}
 }
 
-func getDiff(dir string) (*[]diff, error) {
+func getDiff(dir string) ([]diff, error) {
 	cmd := exec.Command("git", "-C", dir, "diff", "HEAD")
 	out, err := cmd.CombinedOutput()
 	out_str := string(out)
@@ -111,7 +111,7 @@ func getDiff(dir string) (*[]diff, error) {
 	return parseGitDiff(&out_str), nil
 }
 
-func parseGitDiff(raw_diff *string) *[]diff {
+func parseGitDiff(raw_diff *string) []diff {
 	diffs := []diff{}
 	headers := []string{}
 	src, dst := "", ""
@@ -166,5 +166,5 @@ func parseGitDiff(raw_diff *string) *[]diff {
 		})
 	}
 
-	return &diffs
+	return diffs
 }
