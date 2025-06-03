@@ -3,6 +3,7 @@ package git
 import (
 	"fmt"
 	"os/exec"
+	"slices"
 	"strconv"
 
 	"github.com/Otard95/ngm/lib/slice"
@@ -29,7 +30,7 @@ const (
 	CHANGE_KIND_COUNT
 )
 
-var changeKindIcon = [CHANGE_KIND_COUNT]string{"󱇨", "", "󱀷", "󱀱", "󰆏", "󱁼", ""}
+var changeKindIcon = [CHANGE_KIND_COUNT]string{"󱇨 ", " ", "󱀷 ", "󱀱 ", "󰆏 ", "󱁼 ", " "}
 
 func changeKindFromString(s string) changeKind {
 	switch s {
@@ -126,11 +127,34 @@ type status struct {
 	untracked []string
 }
 
-func (s *status) Print() string {
+func (s *status) PrintBranchInfo() string {
 	out := fmt.Sprintf(`%s %s`, branch_icon.Render(""), s.branch.name)
 	if s.branch.upstream != nil {
 		out += fmt.Sprintf(" ↑%d ↓%d", s.branch.upstream.ahead, s.branch.upstream.behind)
 	}
+	return out
+}
+
+func (s *status) Glance() string {
+	changeKinds := []changeKind{}
+	for _, c := range s.staged {
+		changeKinds = append(changeKinds, c.kind)
+	}
+	for _, c := range s.unstaged {
+		changeKinds = append(changeKinds, c.kind)
+	}
+	icons := slice.Map(
+		slices.Compact(changeKinds),
+		func(c changeKind, _ int) string { return c.Icon() },
+	)
+	if len(s.untracked) > 0 {
+		icons = append(icons, " ")
+	}
+	return slice.Join(icons, "")
+}
+
+func (s *status) Print() string {
+	out := s.PrintBranchInfo()
 	out += "\n"
 
 	if len(s.staged) > 0 {
