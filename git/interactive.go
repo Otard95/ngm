@@ -138,7 +138,7 @@ func (s diffLine) Render() string {
 func lineChildren(parent line) []line {
 	switch v := parent.(type) {
 	case *dirLine:
-		return slice.Concat(
+		children := slice.Concat(
 			slice.Map(v.dir.stat.untracked, func(file_path string, i int) line {
 				return &untrackedLine{
 					text:      untracked_style.Render(fmt.Sprintf("   %s", file_path)),
@@ -168,6 +168,10 @@ func lineChildren(parent line) []line {
 				}
 			}),
 		)
+		if len(children) == 0 {
+			children = append(children, textLine{text: "No changes", childLine: childLine{parent: v}})
+		}
+		return children
 
 	case *unstagedLine:
 		dif := slice.Find(v.dir.dif, func(diff diff) bool { return diff.src == ("a/" + v.change.file) })
