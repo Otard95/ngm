@@ -7,6 +7,14 @@ import (
 
 	"github.com/Otard95/ngm/lib/slice"
 	"github.com/Otard95/ngm/ui"
+	"github.com/charmbracelet/lipgloss"
+)
+
+var (
+	diffUnchanged = lipgloss.NewStyle().Foreground(ui.ColorSubtext0)
+	diffAdd       = lipgloss.NewStyle().Foreground(ui.ColorGreen)
+	diffRemove    = lipgloss.NewStyle().Foreground(ui.ColorRed)
+	diffHeader    = lipgloss.NewStyle().Foreground(ui.ColorText)
 )
 
 type diff struct {
@@ -42,10 +50,10 @@ func (diff diff) String() string {
 				diff.hunk,
 				func(l string, _ int) string {
 					if strings.HasPrefix(l, "-") {
-						return ui.ErrorStyle.Render(l)
+						return diffRemove.Render(l)
 					}
 					if strings.HasPrefix(l, "+") {
-						return ui.SuccessStyle.Render(l)
+						return diffAdd.Render(l)
 					}
 					return l
 				},

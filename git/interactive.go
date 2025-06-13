@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/Otard95/ngm/lib/slice"
 	"github.com/Otard95/ngm/log"
@@ -122,7 +123,16 @@ type diffLine struct {
 
 func (diffLine) isLine() {}
 func (s diffLine) Render() string {
-	return s.text
+	if strings.HasPrefix(s.text, "@") {
+		return diffHeader.Render(s.text)
+	}
+	if strings.HasPrefix(s.text, "+") {
+		return diffAdd.Render(s.text)
+	}
+	if strings.HasPrefix(s.text, "-") {
+		return diffRemove.Render(s.text)
+	}
+	return diffUnchanged.Render(s.text)
 }
 
 func lineChildren(parent line) []line {
