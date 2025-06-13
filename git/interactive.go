@@ -21,12 +21,40 @@ var (
 
 type line interface {
 	isLine()
+}
+type renderer interface {
 	Render() string
+}
+type parented interface {
+	Parent() line
+}
+type toggleable interface {
+	Open() bool
+	SetOpen(s bool)
+}
+
+type childLine struct {
+	parent line
+}
+
+func (l childLine) Parent() line {
+	return l.parent
+}
+
+type toggle struct {
+	open bool
+}
+
+func (t toggle) Open() bool {
+	return t.open
+}
+func (t *toggle) SetOpen(s bool) {
+	t.open = s
 }
 
 type textLine struct {
-	text   string
-	parent line
+	text string
+	childLine
 }
 
 func (textLine) isLine() {}
@@ -37,7 +65,7 @@ func (t textLine) Render() string {
 type dirLine struct {
 	text string
 	dir  *directory
-	open bool
+	toggle
 }
 
 func (dirLine) isLine() {}
@@ -46,10 +74,10 @@ func (d dirLine) Render() string {
 }
 
 type untrackedLine struct {
-	text   string
-	file   string
-	dir    *directory
-	parent line
+	text string
+	file string
+	dir  *directory
+	childLine
 }
 
 func (untrackedLine) isLine() {}
@@ -62,8 +90,8 @@ type unstagedLine struct {
 	dir    *directory
 	stat   *status
 	change change
-	open   bool
-	parent line
+	toggle
+	childLine
 }
 
 func (unstagedLine) isLine() {}
@@ -76,8 +104,8 @@ type stagedLine struct {
 	dir    *directory
 	stat   *status
 	change change
-	open   bool
-	parent line
+	toggle
+	childLine
 }
 
 func (stagedLine) isLine() {}
@@ -86,10 +114,10 @@ func (s stagedLine) Render() string {
 }
 
 type diffLine struct {
-	text   string
-	dir    *directory
-	dif    *diff
-	parent line
+	text string
+	dir  *directory
+	dif  *diff
+	childLine
 }
 
 func (diffLine) isLine() {}
@@ -97,53 +125,54 @@ func (s diffLine) Render() string {
 	return s.text
 }
 
-func lineChildren(l line) []line {
-	switch v := l.(type) {
+func lineChildren(parent line) []line {
+	switch v := parent.(type) {
 	case *dirLine:
 		return slice.Concat(
-			slice.Map(v.dir.stat.untracked, func(s string, i int) line {
+			slice.Map(v.dir.stat.untracked, func(file_path string, i int) line {
 				return &untrackedLine{
-					text:   untracked_style.Render(fmt.Sprintf("   %s", s)),
-					file:   s,
-					dir:    v.dir,
-					parent: l,
+					text:      untracked_style.Render(fmt.Sprintf("   %s", file_path)),
+					file:      file_path,
+					dir:       v.dir,
+					childLine: childLine{parent: parent},
 				}
 			}),
-			slice.Map(v.dir.stat.unstaged, func(c change, i int) line {
+			slice.Map(v.dir.stat.unstaged, func(change change, i int) line {
 				return &unstagedLine{
-					text:   unstaged_style.Render("  " + c.String()),
-					dir:    v.dir,
-					stat:   v.dir.stat,
-					change: c,
-					open:   false,
-					parent: l,
+					text:      unstaged_style.Render("  " + change.String()),
+					dir:       v.dir,
+					stat:      v.dir.stat,
+					change:    change,
+					toggle:    toggle{open: false},
+					childLine: childLine{parent: parent},
 				}
 			}),
-			slice.Map(v.dir.stat.staged, func(c change, i int) line {
+			slice.Map(v.dir.stat.staged, func(change change, i int) line {
 				return &stagedLine{
-					text:   staged_style.Render("  " + c.String()),
-					dir:    v.dir,
-					stat:   v.dir.stat,
-					change: c,
-					open:   false,
-					parent: l,
+					text:      staged_style.Render("  " + change.String()),
+					dir:       v.dir,
+					stat:      v.dir.stat,
+					change:    change,
+					toggle:    toggle{open: false},
+					childLine: childLine{parent: parent},
 				}
 			}),
 		)
+
 	case *unstagedLine:
-		dif := slice.Find(v.dir.dif, func(d diff) bool { return d.src == ("a/" + v.change.file) })
+		dif := slice.Find(v.dir.dif, func(diff diff) bool { return diff.src == ("a/" + v.change.file) })
 		if dif == nil {
 			return []line{&textLine{
-				text:   "   No diff",
-				parent: v,
+				text:      "   No diff",
+				childLine: childLine{parent: v},
 			}}
 		}
-		return slice.Map(dif.hunk, func(l string, i int) line {
+		return slice.Map(dif.hunk, func(hunk_line string, i int) line {
 			return &diffLine{
-				text:   l,
-				dir:    v.dir,
-				dif:    dif,
-				parent: v,
+				text:      hunk_line,
+				dir:       v.dir,
+				dif:       dif,
+				childLine: childLine{parent: v},
 			}
 		})
 	}
@@ -160,65 +189,63 @@ type model struct {
 	width       int
 }
 
-func (m *model) up() {
-	if m.cursor > 0 {
-		m.cursor--
+func (model *model) up() {
+	if model.cursor > 0 {
+		model.cursor--
+	}
+	// Auto scroll when cursor is less than 5 lines from the top
+	if model.scroll > model.cursor-5 {
+		model.scroll = max(model.cursor-5, 0)
 	}
 }
 
-func (m *model) down() {
-	if m.cursor < len(m.lines)-1 {
-		m.cursor++
+func (model *model) down() {
+	if model.cursor < len(model.lines)-1 {
+		model.cursor++
+	}
+	// Auto scroll when cursor is less than 5 lines from the bottom
+	if model.scroll+model.height < model.cursor+5 {
+		model.scroll = model.cursor + 5 - model.height
 	}
 }
 
-func (m *model) toggleLine() {
-	line := m.lines[m.cursor]
-	switch v := line.(type) {
-	case *dirLine:
-		if v.open {
-			m.close(v)
-			v.open = false
+func (model *model) toggleLine() {
+	current_line := model.lines[model.cursor]
+	if toggle_line, ok := current_line.(toggleable); ok {
+		if toggle_line.Open() {
+			model.closeLine(current_line)
+			toggle_line.SetOpen(false)
 			return
 		}
-		v.open = true
-		m.lines = slices.Insert(
-			m.lines,
-			m.cursor+1,
-			lineChildren(v)...,
+		toggle_line.SetOpen(true)
+		model.lines = slices.Insert(
+			model.lines,
+			model.cursor+1,
+			lineChildren(current_line)...,
 		)
-	case *unstagedLine:
-		if v.open {
-			m.close(v)
-			v.open = false
-			return
-		}
-		v.open = true
-		m.lines = slices.Insert(
-			m.lines,
-			m.cursor+1,
-			lineChildren(v)...,
-		)
-	case *diffLine:
-		i := slices.Index(m.lines, v.parent)
+	} else if parented_line, ok := current_line.(parented); ok {
+		i := slices.Index(model.lines, parented_line.Parent())
 		if i != -1 {
-			m.cursor = i
-			m.toggleLine()
+			model.cursor = i
+			model.toggleLine()
 		}
 	}
 }
 
-func (m *model) close(lineToClose line) {
-	m.lines = slice.Filter(m.lines, func(l line, i int) bool {
-		switch v := l.(type) {
-		case *untrackedLine:
-			return v.parent != lineToClose
-		case *unstagedLine:
-			return v.parent != lineToClose
-		case *stagedLine:
-			return v.parent != lineToClose
-		case *diffLine:
-			return v.parent != lineToClose
+func (model *model) closeLine(lineToClose line) {
+	parents := []line{lineToClose}
+	model.lines = slice.Filter(model.lines, func(l line, i int) bool {
+		if parented_line, ok := l.(parented); ok {
+			parent := parented_line.Parent()
+			if parent == nil {
+				return true
+			}
+
+			isChildOfLineToClose := slices.Index(parents, parent) != -1
+			if isChildOfLineToClose {
+				parents = append(parents, l)
+			}
+			return !isChildOfLineToClose
 		}
 		return true
 	})
@@ -263,18 +290,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
-	lines := []string{fmt.Sprintf("\n %s\n", help.Render("j/↓ (down) | k/↑ (up) | =/tab/space (toggle) | q/ctrl+c (quit)"))}
+func (model model) View() string {
+	lines := []string{fmt.Sprintf(
+		"\n %s\n",
+		help.Render("j/↓ (down) | k/↑ (up) | =/tab/space (toggle) | q/ctrl+c (quit)"),
+	)}
 
-	for i, line := range m.lines {
-		text := line.Render()
-		if i == m.cursor {
-			text = cursor.Render(text)
+	for i, line := range model.lines {
+		if l, ok := line.(renderer); ok {
+			text := l.Render()
+			if i == model.cursor {
+				text = cursor.Render(text)
+			}
+			lines = append(lines, fmt.Sprintf("%s", text))
 		}
-		lines = append(lines, fmt.Sprintf("%s", text))
 	}
 
-	return slice.Join(lines[m.scroll:min(m.scroll+m.height, len(lines))], "\n")
+	lines = append(lines, "")
+
+	return slice.Join(lines[model.scroll:min(model.scroll+model.height, len(lines))], "\n")
 }
 
 type directory struct {
