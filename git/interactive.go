@@ -89,7 +89,6 @@ func (u untrackedLine) Render() string {
 type unstagedLine struct {
 	text   string
 	dir    *directory
-	stat   *status
 	change change
 	toggle
 	childLine
@@ -103,7 +102,6 @@ func (u unstagedLine) Render() string {
 type stagedLine struct {
 	text   string
 	dir    *directory
-	stat   *status
 	change change
 	toggle
 	childLine
@@ -151,7 +149,6 @@ func lineChildren(parent line) []line {
 				return &unstagedLine{
 					text:      unstaged_style.Render("  " + change.String()),
 					dir:       v.dir,
-					stat:      v.dir.stat,
 					change:    change,
 					toggle:    toggle{open: false},
 					childLine: childLine{parent: parent},
@@ -161,7 +158,6 @@ func lineChildren(parent line) []line {
 				return &stagedLine{
 					text:      staged_style.Render("  " + change.String()),
 					dir:       v.dir,
-					stat:      v.dir.stat,
 					change:    change,
 					toggle:    toggle{open: false},
 					childLine: childLine{parent: parent},
@@ -174,6 +170,23 @@ func lineChildren(parent line) []line {
 		return children
 
 	case *unstagedLine:
+		dif := slice.Find(v.dir.dif, func(diff diff) bool { return diff.src == ("a/" + v.change.file) })
+		if dif == nil {
+			return []line{&textLine{
+				text:      "   No diff",
+				childLine: childLine{parent: v},
+			}}
+		}
+		return slice.Map(dif.hunk, func(hunk_line string, i int) line {
+			return &diffLine{
+				text:      hunk_line,
+				dir:       v.dir,
+				dif:       dif,
+				childLine: childLine{parent: v},
+			}
+		})
+
+	case *stagedLine:
 		dif := slice.Find(v.dir.dif, func(diff diff) bool { return diff.src == ("a/" + v.change.file) })
 		if dif == nil {
 			return []line{&textLine{
@@ -224,10 +237,10 @@ func (model *model) down() {
 }
 
 func (model *model) toggleLine() {
-	current_line := model.lines[model.cursor]
-	if toggle_line, ok := current_line.(toggleable); ok {
+	line := model.lines[model.cursor]
+	if toggle_line, ok := line.(toggleable); ok {
 		if toggle_line.Open() {
-			model.closeLine(current_line)
+			model.closeLine(line)
 			toggle_line.SetOpen(false)
 			return
 		}
@@ -235,12 +248,16 @@ func (model *model) toggleLine() {
 		model.lines = slices.Insert(
 			model.lines,
 			model.cursor+1,
-			lineChildren(current_line)...,
+			lineChildren(line)...,
 		)
-	} else if parented_line, ok := current_line.(parented); ok {
+	} else if parented_line, ok := line.(parented); ok {
 		i := slices.Index(model.lines, parented_line.Parent())
 		if i != -1 {
 			model.cursor = i
+			// Auto scroll when cursor is less than 5 lines from the top
+			if model.scroll > model.cursor-5 {
+				model.scroll = max(model.cursor-5, 0)
+			}
 			model.toggleLine()
 		}
 	}
@@ -263,6 +280,69 @@ func (model *model) closeLine(lineToClose line) {
 		}
 		return true
 	})
+}
+
+func (model *model) stage() {
+	current_line := model.lines[model.cursor]
+	var (
+		parent line
+		dir    *directory
+	)
+	if unstaged, ok := current_line.(*unstagedLine); ok {
+		err := stageChange(unstaged.dir.path, unstaged.change)
+		if err != nil {
+			panic(err)
+		}
+
+		parent = unstaged.parent
+		dir = unstaged.dir
+	}
+
+	if untracked, ok := current_line.(*untrackedLine); ok {
+		err := stagePath(untracked.dir.path, untracked.file)
+		if err != nil {
+			panic(err)
+		}
+
+		parent = untracked.parent
+		dir = untracked.dir
+	}
+
+	if parent != nil && dir != nil {
+		stat, err := getStatus(dir.path)
+		if err != nil {
+			panic(err)
+		}
+		dir.stat = stat
+
+		prev_cursor := model.cursor
+		model.cursor = slices.Index(model.lines, parent)
+		model.toggleLine()
+		model.toggleLine()
+		model.cursor = prev_cursor
+	}
+}
+
+func (model *model) unstage() {
+	current_line := model.lines[model.cursor]
+	if staged, ok := current_line.(*stagedLine); ok {
+		err := unstageChange(staged.dir.path, staged.change)
+		if err != nil {
+			panic(err)
+		}
+
+		stat, err := getStatus(staged.dir.path)
+		if err != nil {
+			panic(err)
+		}
+		staged.dir.stat = stat
+
+		prev_cursor := model.cursor
+		model.cursor = slices.Index(model.lines, staged.parent)
+		model.toggleLine()
+		model.toggleLine()
+		model.cursor = prev_cursor
+	}
 }
 
 func initialModel(directories []*directory) model {
@@ -295,6 +375,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.down()
 		case "tab", "=", " ":
 			m.toggleLine()
+		case "s":
+			m.stage()
+		case "u":
+			m.unstage()
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
