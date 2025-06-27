@@ -404,6 +404,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.stage()
 		case "u":
 			m.unstage()
+		case "h":
+			m.showHelp = !m.showHelp
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -414,24 +416,37 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model model) View() string {
-	lines := []string{fmt.Sprintf(
-		"\n %s\n",
-		help.Render("j/↓ (down) | k/↑ (up) | =/tab/space (toggle) | q/ctrl+c (quit)"),
-	)}
+	if model.showHelp {
+		return `
+  Key        | Alt key | Action
+  -----------|---------|-------
+  Ctrl+c     | q       | Quit
+  Arrow Up   | k       | Move the cursor up
+  Arrow Down | j       | Move the cursor Down
+  Tab        | Space   | Open/close the line under the cursor
+  s          |         | Stage the change under the cursor
+  u          |         | Unstage the change under the cursor
+  h          |         | Toggle this help screen`
+	} else {
+		lines := []string{fmt.Sprintf(
+			"\n %s\n",
+			help.Render("j/↓ (down) | k/↑ (up) | tab/space (toggle) | q/ctrl+c (quit) | h (more help)"),
+		)}
 
-	for i, line := range model.lines {
-		if l, ok := line.(renderer); ok {
-			text := l.Render()
-			if i == model.cursor {
-				text = cursor.Render(text)
+		for i, line := range model.lines {
+			if l, ok := line.(renderer); ok {
+				text := l.Render()
+				if i == model.cursor {
+					text = cursor.Render(text)
+				}
+				lines = append(lines, fmt.Sprintf("%s", text))
 			}
-			lines = append(lines, fmt.Sprintf("%s", text))
 		}
+
+		lines = append(lines, " ")
+
+		return slice.Join(lines[model.scroll:min(model.scroll+model.height, len(lines))], "\n")
 	}
-
-	lines = append(lines, " ")
-
-	return slice.Join(lines[model.scroll:min(model.scroll+model.height, len(lines))], "\n")
 }
 
 type directory struct {
