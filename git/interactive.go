@@ -14,7 +14,7 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 )
 
 // Catppuccin style guide: https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md
@@ -667,6 +667,6 @@ func Interactive() {
 		os.Exit(1)
 	}
 
-	spew.Dump(dirs)
+	// spew.Dump(dirs)
 
 }
