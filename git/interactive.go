@@ -513,10 +513,19 @@ func (model model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else if model.afterCommit {
 			switch msg.String() {
 			case "ctrl+c":
-				model.textInput.Reset()
-				model.textInput.Blur()
-				model.committing = false
-				model.afterCommit = false
+				dirs := slice.ParallelMap(
+					slice.Map(model.directories, func(dir *directory, _ int) string { return dir.path }),
+					func(path string, _ int) *directory {
+						stat, _ := getStatus(path)
+						dif, _ := getDiff(path)
+						return &directory{
+							path: path,
+							stat: stat,
+							dif:  dif,
+						}
+					},
+				)
+				model = initialModel(dirs)
 			}
 		} else {
 			switch {
