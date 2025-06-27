@@ -11,6 +11,7 @@ import (
 	"github.com/Otard95/ngm/ui"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/davecgh/go-spew/spew"
@@ -235,7 +236,7 @@ func lineChildren(parent line) []line {
 }
 
 type keymap = struct {
-	down, up, toggle, stage, unstage, help, quit key.Binding
+	down, up, toggle, stage, unstage, commit, help, quit key.Binding
 }
 
 type model struct {
@@ -248,6 +249,9 @@ type model struct {
 	scroll      int
 	height      int
 	width       int
+	committing  bool
+	afterCommit bool
+	textInput   textarea.Model
 }
 
 func (model *model) up() {
@@ -379,11 +383,54 @@ func (model *model) unstage() {
 	}
 }
 
+type commitResult struct {
+	text string
+	path string
+	ok   bool
+}
+
+func (model *model) commit(message string) []commitResult {
+	return slice.ParallelMap(
+		slice.Filter(model.directories, func(dir *directory, _ int) bool {
+			return len(dir.stat.staged) > 0
+		}),
+		func(dir *directory, _ int) commitResult {
+			result, err := doCommit(dir.path, message)
+			return commitResult{
+				text: result,
+				path: dir.path,
+				ok:   err == nil,
+			}
+		},
+	)
+}
+
+func newTextarea() textarea.Model {
+	t := textarea.New()
+	// t.Prompt = ""
+	t.Placeholder = "Commit message"
+	t.ShowLineNumbers = true
+	t.Cursor.Style = cursor_style
+	t.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(ui.ColorOverlay1)
+	t.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(ui.ColorOverlay0)
+	t.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(ui.ColorSurface0)
+	// t.FocusedStyle.Base = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("238"))
+	// t.BlurredStyle.Base = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("238"))
+	// t.FocusedStyle.EndOfBuffer = lipgloss.NewStyle().Foreground(lipgloss.Color("235"))
+	// t.BlurredStyle.EndOfBuffer = lipgloss.NewStyle().Foreground(lipgloss.Color("235"))
+	t.KeyMap.DeleteWordBackward.SetEnabled(false)
+	t.KeyMap.LineNext = key.NewBinding(key.WithKeys("down"))
+	t.KeyMap.LinePrevious = key.NewBinding(key.WithKeys("up"))
+	t.Blur()
+	return t
+}
+
 func initialModel(directories []*directory) model {
 	help := help.New()
 	help.Styles.ShortKey = help_key_style
 	help.Styles.ShortDesc = help_desc_style
 	help.Styles.ShortSeparator = lipgloss.NewStyle().Foreground(ui.ColorOverlay0)
+
 	return model{
 		directories: directories,
 		cursor:      0,
@@ -393,7 +440,8 @@ func initialModel(directories []*directory) model {
 				dir:  dir,
 			}
 		}),
-		help: help,
+		textInput: newTextarea(),
+		help:      help,
 		keymap: keymap{
 			help: key.NewBinding(
 				key.WithKeys("h"),
@@ -404,7 +452,7 @@ func initialModel(directories []*directory) model {
 				key.WithHelp("q", "quit"),
 			),
 			toggle: key.NewBinding(
-				key.WithKeys("tab", "space"),
+				key.WithKeys("tab", "space", "="),
 				key.WithHelp("space/tab", "toggle"),
 			),
 			up: key.NewBinding(
@@ -423,40 +471,98 @@ func initialModel(directories []*directory) model {
 				key.WithKeys("s"),
 				key.WithHelp("s", "stage"),
 			),
+			commit: key.NewBinding(
+				key.WithKeys("c"),
+				key.WithHelp("c", "commit"),
+			),
 		},
 	}
 }
 
-func (m model) Init() tea.Cmd {
-	return nil
+func (model model) Init() tea.Cmd {
+	return textarea.Blink
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+func (model model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	justStartedCommitting := false
 
+	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, m.keymap.quit):
-			return m, tea.Quit
-		case key.Matches(msg, m.keymap.up):
-			m.up()
-		case key.Matches(msg, m.keymap.down):
-			m.down()
-		case key.Matches(msg, m.keymap.toggle):
-			m.toggleLine()
-		case key.Matches(msg, m.keymap.stage):
-			m.stage()
-		case key.Matches(msg, m.keymap.unstage):
-			m.unstage()
-		case key.Matches(msg, m.keymap.help):
-			m.showHelp = !m.showHelp
+		if model.committing {
+			switch msg.String() {
+			case "ctrl+c":
+				result := model.commit(model.textInput.Value())
+				model.textInput.SetValue(slice.Join(slice.Map(
+					result,
+					func(res commitResult, _ int) string {
+						out := ""
+						if res.ok {
+							out = "[OK]"
+						} else {
+							out = "[ERROR]"
+						}
+
+						out += res.path + "\n" + res.text + "\n\n"
+						return out
+					},
+				), "\n"))
+				model.textInput.Blur()
+				model.committing = false
+				model.afterCommit = true
+			}
+		} else if model.afterCommit {
+			switch msg.String() {
+			case "ctrl+c":
+				model.textInput.Reset()
+				model.textInput.Blur()
+				model.committing = false
+				model.afterCommit = false
+			}
+		} else {
+			switch {
+			case key.Matches(msg, model.keymap.quit):
+				return model, tea.Quit
+
+			case key.Matches(msg, model.keymap.up):
+				model.up()
+
+			case key.Matches(msg, model.keymap.down):
+				model.down()
+
+			case key.Matches(msg, model.keymap.toggle):
+				model.toggleLine()
+
+			case key.Matches(msg, model.keymap.stage):
+				model.stage()
+
+			case key.Matches(msg, model.keymap.unstage):
+				model.unstage()
+
+			case key.Matches(msg, model.keymap.commit):
+				model.committing = true
+				justStartedCommitting = true
+				model.textInput.Focus()
+
+			case key.Matches(msg, model.keymap.help):
+				model.showHelp = !model.showHelp
+
+			}
 		}
+
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		model.width = msg.Width
+		model.height = msg.Height
+		model.textInput.SetWidth(model.width)
+		model.textInput.SetHeight(min(model.height-1, 40))
 	}
 
-	return m, nil
+	if justStartedCommitting {
+		msg = nil
+	}
+	newTextInput, cmd := model.textInput.Update(msg)
+	model.textInput = newTextInput
+
+	return model, cmd
 }
 
 func (model model) View() string {
@@ -471,6 +577,8 @@ func (model model) View() string {
   s          |         | Stage the change under the cursor
   u          |         | Unstage the change under the cursor
   h          |         | Toggle this help screen`
+	} else if model.committing || model.afterCommit {
+		return model.textInput.View() + "\nCtrl+c to continue"
 	} else {
 		lines := []string{fmt.Sprintf(
 			"\n %s\n",
