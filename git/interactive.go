@@ -344,7 +344,7 @@ func (model *model) stage() {
 		model.cursor = slices.Index(model.lines, parent)
 		model.toggleLine()
 		model.toggleLine()
-		model.cursor = prev_cursor
+		model.cursor = min(prev_cursor, len(model.lines)-1)
 	}
 }
 
@@ -366,7 +366,7 @@ func (model *model) unstage() {
 		model.cursor = slices.Index(model.lines, staged.parent)
 		model.toggleLine()
 		model.toggleLine()
-		model.cursor = prev_cursor
+		model.cursor = min(prev_cursor, len(model.lines)-1)
 	}
 }
 
