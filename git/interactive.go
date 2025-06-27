@@ -405,6 +405,35 @@ func (model *model) commit(message string) []commitResult {
 	)
 }
 
+func (model *model) reset() {
+	dirs := slice.ParallelMap(
+		slice.Map(model.directories, func(dir *directory, _ int) string { return dir.path }),
+		func(path string, _ int) *directory {
+			stat, _ := getStatus(path)
+			dif, _ := getDiff(path)
+			return &directory{
+				path: path,
+				stat: stat,
+				dif:  dif,
+			}
+		},
+	)
+	model.directories = dirs
+	model.lines = slice.Map(dirs, func(dir *directory, _ int) line {
+		return &dirLine{
+			text: dir.path,
+			dir:  dir,
+		}
+	})
+	model.showHelp = false
+	model.cursor = 0
+	model.scroll = 0
+	model.committing = false
+	model.afterCommit = false
+	model.textInput.Reset()
+	model.textInput.Blur()
+}
+
 func newTextarea() textarea.Model {
 	t := textarea.New()
 	// t.Prompt = ""
@@ -513,19 +542,7 @@ func (model model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else if model.afterCommit {
 			switch msg.String() {
 			case "ctrl+c":
-				dirs := slice.ParallelMap(
-					slice.Map(model.directories, func(dir *directory, _ int) string { return dir.path }),
-					func(path string, _ int) *directory {
-						stat, _ := getStatus(path)
-						dif, _ := getDiff(path)
-						return &directory{
-							path: path,
-							stat: stat,
-							dif:  dif,
-						}
-					},
-				)
-				model = initialModel(dirs)
+				model.reset()
 			}
 		} else {
 			switch {
