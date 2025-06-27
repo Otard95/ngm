@@ -9,6 +9,8 @@ import (
 	"github.com/Otard95/ngm/lib/slice"
 	"github.com/Otard95/ngm/log"
 	"github.com/Otard95/ngm/ui"
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/davecgh/go-spew/spew"
@@ -16,8 +18,9 @@ import (
 
 // Catppuccin style guide: https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md
 var (
-	cursor = lipgloss.NewStyle().Background(ui.ColorOverlay0).Foreground(ui.ColorCrust)
-	help   = lipgloss.NewStyle().Foreground(ui.ColorOverlay1)
+	cursor_style    = lipgloss.NewStyle().Background(ui.ColorOverlay0).Foreground(ui.ColorCrust)
+	help_key_style  = lipgloss.NewStyle().Foreground(ui.ColorSubtext0)
+	help_desc_style = lipgloss.NewStyle().Foreground(ui.ColorOverlay0)
 )
 
 type line interface {
@@ -231,9 +234,15 @@ func lineChildren(parent line) []line {
 	return []line{}
 }
 
+type keymap = struct {
+	down, up, toggle, stage, unstage, help, quit key.Binding
+}
+
 type model struct {
 	lines       []line
 	directories []*directory
+	keymap      keymap
+	help        help.Model
 	showHelp    bool
 	cursor      int
 	scroll      int
@@ -371,6 +380,10 @@ func (model *model) unstage() {
 }
 
 func initialModel(directories []*directory) model {
+	help := help.New()
+	help.Styles.ShortKey = help_key_style
+	help.Styles.ShortDesc = help_desc_style
+	help.Styles.ShortSeparator = lipgloss.NewStyle().Foreground(ui.ColorOverlay0)
 	return model{
 		directories: directories,
 		cursor:      0,
@@ -380,6 +393,37 @@ func initialModel(directories []*directory) model {
 				dir:  dir,
 			}
 		}),
+		help: help,
+		keymap: keymap{
+			help: key.NewBinding(
+				key.WithKeys("h"),
+				key.WithHelp("h", "help"),
+			),
+			quit: key.NewBinding(
+				key.WithKeys("q", "ctrl+c"),
+				key.WithHelp("q", "quit"),
+			),
+			toggle: key.NewBinding(
+				key.WithKeys("tab", "space"),
+				key.WithHelp("space/tab", "toggle"),
+			),
+			up: key.NewBinding(
+				key.WithKeys("up", "k"),
+				key.WithHelp("↑", "up"),
+			),
+			down: key.NewBinding(
+				key.WithKeys("down", "j"),
+				key.WithHelp("↓", "down"),
+			),
+			unstage: key.NewBinding(
+				key.WithKeys("u"),
+				key.WithHelp("u", "unstage"),
+			),
+			stage: key.NewBinding(
+				key.WithKeys("s"),
+				key.WithHelp("s", "stage"),
+			),
+		},
 	}
 }
 
@@ -391,20 +435,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
+		switch {
+		case key.Matches(msg, m.keymap.quit):
 			return m, tea.Quit
-		case "up", "k":
+		case key.Matches(msg, m.keymap.up):
 			m.up()
-		case "down", "j":
+		case key.Matches(msg, m.keymap.down):
 			m.down()
-		case "tab", "=", " ":
+		case key.Matches(msg, m.keymap.toggle):
 			m.toggleLine()
-		case "s":
+		case key.Matches(msg, m.keymap.stage):
 			m.stage()
-		case "u":
+		case key.Matches(msg, m.keymap.unstage):
 			m.unstage()
-		case "h":
+		case key.Matches(msg, m.keymap.help):
 			m.showHelp = !m.showHelp
 		}
 	case tea.WindowSizeMsg:
@@ -430,14 +474,20 @@ func (model model) View() string {
 	} else {
 		lines := []string{fmt.Sprintf(
 			"\n %s\n",
-			help.Render("j/↓ (down) | k/↑ (up) | tab/space (toggle) | q/ctrl+c (quit) | h (more help)"),
+			model.help.ShortHelpView([]key.Binding{
+				model.keymap.up,
+				model.keymap.down,
+				model.keymap.toggle,
+				model.keymap.quit,
+				model.keymap.help,
+			}),
 		)}
 
 		for i, line := range model.lines {
 			if l, ok := line.(renderer); ok {
 				text := l.Render()
 				if i == model.cursor {
-					text = cursor.Render(text)
+					text = cursor_style.Render(text)
 				}
 				lines = append(lines, fmt.Sprintf("%s", text))
 			}
