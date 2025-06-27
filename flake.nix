@@ -33,7 +33,7 @@
 
           buildInputs = with pkgs; [ git ];
 
-          vendorHash = "sha256-TsoPc/hgYLUTwLyCNKlt1A+r4B94u1ciY7F/JCo6W1M=";
+          vendorHash = "sha256-7Kqjluou1R9DtBDIIaSy0p+Qi6XxyYPqOnJGGk6B+6k=";
           nativeCheckInputs = with pkgs; [ less ];
 
         };
