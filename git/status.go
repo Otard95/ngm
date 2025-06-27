@@ -12,10 +12,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var staged_style = lipgloss.NewStyle().Foreground(lipgloss.Color("#a6d189"))
-var unstaged_style = lipgloss.NewStyle().Foreground(lipgloss.Color("#e78284"))
-var untracked_style = lipgloss.NewStyle().Foreground(lipgloss.Color("#ea999c"))
-var branch_icon = lipgloss.NewStyle().Foreground(lipgloss.Color("#ca9ee6"))
+var (
+	staged_style    = lipgloss.NewStyle().Foreground(ui.ColorGreen)
+	unstaged_style  = lipgloss.NewStyle().Foreground(ui.ColorRed)
+	untracked_style = lipgloss.NewStyle().Foreground(ui.ColorMaroon)
+	branch_icon     = lipgloss.NewStyle().Foreground(ui.ColorMauve)
+)
 
 type changeKind int
 

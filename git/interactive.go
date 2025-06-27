@@ -16,7 +16,7 @@ import (
 
 // Catppuccin style guide: https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md
 var (
-	cursor = lipgloss.NewStyle().Background(ui.ColorOverlay2).Foreground(ui.ColorCrust)
+	cursor = lipgloss.NewStyle().Background(ui.ColorOverlay0).Foreground(ui.ColorCrust)
 	help   = lipgloss.NewStyle().Foreground(ui.ColorOverlay1)
 )
 
@@ -136,34 +136,59 @@ func (s diffLine) Render() string {
 func lineChildren(parent line) []line {
 	switch v := parent.(type) {
 	case *dirLine:
-		children := slice.Concat(
-			slice.Map(v.dir.stat.untracked, func(file_path string, i int) line {
-				return &untrackedLine{
-					text:      untracked_style.Render(fmt.Sprintf("   %s", file_path)),
-					file:      file_path,
-					dir:       v.dir,
-					childLine: childLine{parent: parent},
-				}
-			}),
-			slice.Map(v.dir.stat.unstaged, func(change change, i int) line {
-				return &unstagedLine{
-					text:      unstaged_style.Render("  " + change.String()),
-					dir:       v.dir,
-					change:    change,
-					toggle:    toggle{open: false},
-					childLine: childLine{parent: parent},
-				}
-			}),
-			slice.Map(v.dir.stat.staged, func(change change, i int) line {
-				return &stagedLine{
-					text:      staged_style.Render("  " + change.String()),
-					dir:       v.dir,
-					change:    change,
-					toggle:    toggle{open: false},
-					childLine: childLine{parent: parent},
-				}
-			}),
-		)
+		children := []line{}
+		countUntracked := len(v.dir.stat.untracked)
+		if countUntracked > 0 {
+			children = slices.Concat(
+				children,
+				[]line{textLine{text: fmt.Sprintf("Untracked (%d)", countUntracked), childLine: childLine{parent: v}}},
+				slice.Map(v.dir.stat.untracked, func(file_path string, i int) line {
+					return &untrackedLine{
+						text:      untracked_style.Render(fmt.Sprintf("  %s", file_path)),
+						file:      file_path,
+						dir:       v.dir,
+						childLine: childLine{parent: parent},
+					}
+				}),
+				[]line{textLine{text: " ", childLine: childLine{parent: v}}},
+			)
+		}
+
+		countUnstaged := len(v.dir.stat.unstaged)
+		if countUnstaged > 0 {
+			children = slices.Concat(
+				children,
+				[]line{textLine{text: fmt.Sprintf("Unstaged (%d)", countUnstaged), childLine: childLine{parent: v}}},
+				slice.Map(v.dir.stat.unstaged, func(change change, i int) line {
+					return &unstagedLine{
+						text:      unstaged_style.Render("  " + change.String()),
+						dir:       v.dir,
+						change:    change,
+						toggle:    toggle{open: false},
+						childLine: childLine{parent: parent},
+					}
+				}),
+				[]line{textLine{text: " ", childLine: childLine{parent: v}}},
+			)
+		}
+
+		countStaged := len(v.dir.stat.staged)
+		if countStaged > 0 {
+			children = slices.Concat(
+				children,
+				[]line{textLine{text: fmt.Sprintf("Staged (%d)", countStaged), childLine: childLine{parent: v}}},
+				slice.Map(v.dir.stat.staged, func(change change, i int) line {
+					return &stagedLine{
+						text:      staged_style.Render("  " + change.String()),
+						dir:       v.dir,
+						change:    change,
+						toggle:    toggle{open: false},
+						childLine: childLine{parent: parent},
+					}
+				}),
+				[]line{textLine{text: " ", childLine: childLine{parent: v}}},
+			)
+		}
 		if len(children) == 0 {
 			children = append(children, textLine{text: "No changes", childLine: childLine{parent: v}})
 		}
@@ -404,7 +429,7 @@ func (model model) View() string {
 		}
 	}
 
-	lines = append(lines, "")
+	lines = append(lines, " ")
 
 	return slice.Join(lines[model.scroll:min(model.scroll+model.height, len(lines))], "\n")
 }
