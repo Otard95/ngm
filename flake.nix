@@ -33,7 +33,7 @@
             owner = "otard95";
             repo = "ngm";
             rev = "v${version}";
-            hash = "sha256-7Kqjluou1R9DtBDIIaSy0p+Qi6XxyYPqOnJGGk6B+6k=";
+            hash = "sha256-VKh6uQNfYUnt8CGlzaXAwmkGBcy2Mho/3Mi1ssZH9PQ=";
           };
 
           buildInputs = with pkgs; [ git ];
