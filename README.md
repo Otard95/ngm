@@ -4,7 +4,12 @@ Manage projects and features within a nested git repositories
 
 ## Install
 
-TODO: Fill this out when you know how
+#### With GO
+
+```bash
+$ go install github.com/Otard95/ngm
+$ ngm
+```
 
 ## TODO
 
