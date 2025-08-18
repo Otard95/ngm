@@ -1,5 +1,4 @@
-The MIT License (MIT)
-
+/*
 Copyright © 2025 Stian Myklebostad
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,3 +18,37 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+*/
+package cmd
+
+import (
+	"github.com/Otard95/ngm/git"
+	"github.com/Otard95/ngm/log"
+	"github.com/spf13/cobra"
+)
+
+// pullCmd represents the pull command
+var pullCmd = &cobra.Command{
+	Use:   "pull",
+	Short: "Run the `git pull` command in this and all nested reposiroies",
+	// Long: `This will run the pull`, // TODO: Fill this out
+	Run: func(cmd *cobra.Command, args []string) {
+		log.Debugf("Running pull cmd - args: %v\n", args)
+		git.Pull(args)
+		log.Debugln("Finished pull cmd")
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(pullCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// pullCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// pullCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
