@@ -194,7 +194,11 @@ func lineChildren(parent line) []line {
 			)
 		}
 		if len(children) == 0 {
-			children = append(children, textLine{text: "No changes", childLine: childLine{parent: v}})
+			children = append(
+				children,
+				textLine{text: "No changes", childLine: childLine{parent: v}},
+				textLine{text: " ", childLine: childLine{parent: v}},
+			)
 		}
 		return children
 
@@ -443,10 +447,6 @@ func newTextarea() textarea.Model {
 	t.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(ui.ColorOverlay1)
 	t.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(ui.ColorOverlay0)
 	t.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(ui.ColorSurface0)
-	// t.FocusedStyle.Base = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("238"))
-	// t.BlurredStyle.Base = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("238"))
-	// t.FocusedStyle.EndOfBuffer = lipgloss.NewStyle().Foreground(lipgloss.Color("235"))
-	// t.BlurredStyle.EndOfBuffer = lipgloss.NewStyle().Foreground(lipgloss.Color("235"))
 	t.KeyMap.DeleteWordBackward.SetEnabled(false)
 	t.KeyMap.LineNext = key.NewBinding(key.WithKeys("down"))
 	t.KeyMap.LinePrevious = key.NewBinding(key.WithKeys("up"))
@@ -579,7 +579,7 @@ func (model model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		model.width = msg.Width
 		model.height = msg.Height
 		model.textInput.SetWidth(model.width)
-		model.textInput.SetHeight(min(model.height-1, 40))
+		model.textInput.SetHeight(min(model.height-1, 20))
 	}
 
 	if justStartedCommitting {
