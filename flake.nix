@@ -23,13 +23,18 @@
         };
 
         packages.default = let
-          version = "2.1.0";
+          version = "2.2.0";
         in pkgs.buildGoModule {
 
           pname = "ngm";
           inherit version;
 
-          src = ./.;
+          src = pkgs.fetchFromGitHub {
+            owner = "otard95";
+            repo = "ngm";
+            rev = "v${version}";
+            hash = "sha256-7Kqjluou1R9DtBDIIaSy0p+Qi6XxyYPqOnJGGk6B+6k=";
+          };
 
           buildInputs = with pkgs; [ git ];
 
