@@ -24,7 +24,7 @@
         };
 
         packages.default = let
-          version = "2.3.0";
+          version = "2.3.2";
         in pkgs.buildGoModule {
 
           pname = "ngm";
