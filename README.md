@@ -7,7 +7,7 @@ Manage projects and features within a nested git repositories
 #### With GO
 
 ```console
-$ go install github.com/Otard95/ngm
+$ go install github.com/Otard95/ngm@latest
 $ ngm
 ```
 
