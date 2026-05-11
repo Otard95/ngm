@@ -34,7 +34,7 @@ var pullCmd = &cobra.Command{
 	// Long: `This will run the pull`, // TODO: Fill this out
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Debugf("Running pull cmd - args: %v\n", args)
-		git.Pull(args)
+		git.Pull(args, sshMultiplex, sshMultiplexN)
 		log.Debugln("Finished pull cmd")
 	},
 }

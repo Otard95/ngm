@@ -34,7 +34,7 @@ var pushCmd = &cobra.Command{
 	// Long: `...`, // TODO: Fill this out
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Debugf("Running push cmd - args: %v\n", args)
-		git.Push(args)
+		git.Push(args, sshMultiplex, sshMultiplexN)
 		log.Debugln("Finished push cmd")
 	},
 }

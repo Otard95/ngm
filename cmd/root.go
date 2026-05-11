@@ -28,6 +28,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var sshMultiplex bool
+var sshMultiplexN int
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "ngm",
@@ -55,6 +58,12 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.ngm.yaml)")
+
+	rootCmd.PersistentFlags().BoolVar(&sshMultiplex, "ssh-multiplex", false, "Establish SSH ControlMaster connections before parallel operations (useful for FIDO2/YubiKey SSH keys)")
+	rootCmd.PersistentFlags().BoolVar(&sshMultiplex, "mux", false, "Alias for --ssh-multiplex")
+
+	rootCmd.PersistentFlags().IntVar(&sshMultiplexN, "ssh-multiplex-n", 8, "Max concurrent SSH sessions per ControlMaster connection")
+	rootCmd.PersistentFlags().IntVar(&sshMultiplexN, "mux-n", 8, "Alias for --ssh-multiplex-n")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
