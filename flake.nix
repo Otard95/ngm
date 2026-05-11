@@ -8,7 +8,7 @@
   };
 
   outputs =
-    { nixpkgs, flake-utils, ... }:
+    { self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -24,18 +24,13 @@
         };
 
         packages.default = let
-          version = "2.3.2";
+          version = "2.4.0";
         in pkgs.buildGoModule {
 
           pname = "ngm";
           inherit version;
 
-          src = pkgs.fetchFromGitHub {
-            owner = "otard95";
-            repo = "ngm";
-            rev = "v${version}";
-            hash = "sha256-pxdP3t4SUd9IvJtCeztIorqS04jt2J1Z+58INkloc8c=";
-          };
+          src = self;
 
           buildInputs = with pkgs; [ git ];
 
