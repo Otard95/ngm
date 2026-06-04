@@ -342,13 +342,13 @@ func parseRenameOrCopyChange(statuz *status, view *sv.StringView) {
 	}
 
 	view.SeekNext(sv.Whitespace()). // Skip <sub>
-					SeekNext(sv.Whitespace()). // Skip <mH>
-					SeekNext(sv.Whitespace()). // Skip <mI>
-					SeekNext(sv.Whitespace()). // Skip <mW>
-					SeekNext(sv.Whitespace()). // Skip <hH>
-					SeekNext(sv.Whitespace()). // Skip <hI>
-					SeekNext(sv.Whitespace()). // Skip <X><score>
-					SeekNext(sv.Letter())
+					SeekNext(sv.Whitespace()).        // Skip <mH>
+					SeekNext(sv.Whitespace()).        // Skip <mI>
+					SeekNext(sv.Whitespace()).        // Skip <mW>
+					SeekNext(sv.Whitespace()).        // Skip <hH>
+					SeekNext(sv.Whitespace()).        // Skip <hI>
+					SeekNext(sv.Whitespace()).        // Skip <X><score>
+					SeekEndOf(sv.Whitespace())        // Skip whitespace before <path>
 
 	path := view.TakeUntil(sv.Whitespace()).String()
 	view.Seek(sv.Not(sv.Whitespace()))
