@@ -64,11 +64,10 @@ type change struct {
 }
 
 func (c change) String() string {
-	out := c.kind.Icon() + " " + c.file
 	if c.orig_file != nil {
-		out += " → " + *c.orig_file
+		return c.kind.Icon() + " " + *c.orig_file + " → " + c.file
 	}
-	return out
+	return c.kind.Icon() + " " + c.file
 }
 
 type unmergedChange struct {
