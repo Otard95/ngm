@@ -1,6 +1,7 @@
 package string_view
 
 import (
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -71,8 +72,8 @@ func (w whitespace) match(haystack string) bool {
 	rune, _ := utf8.DecodeRuneInString(haystack)
 	return w.isSpace(rune)
 }
-func (w whitespace) length(_ string) int {
-	return 1
+func (w whitespace) length(s string) int {
+	return len(s) - len(strings.TrimLeftFunc(s, w.isSpace))
 }
 
 type digit struct {
